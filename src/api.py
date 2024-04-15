@@ -7,6 +7,11 @@ client = ZhipuAI(api_key=ZHIPU_API_KEY)
 class FrontEndAgent:
     """
     Agent used to interact with users in the front end.
+    
+    Usage:
+    agent = FrontEndAgent()
+    response = agent.respond("Hello, how are you?")
+    print(response)
     """
     def __init__(self, api_key=ZHIPU_API_KEY, streaming_on=False):
         self.client = ZhipuAI(api_key=api_key)
@@ -36,6 +41,6 @@ class FrontEndAgent:
     def append_agent_output(self, agent_output: str):
         self.chat_history.append({"role": "assistant", "content": agent_output})
 
-    def clear_history() -> bool:
+    def clear_history(self) -> bool:
         self.chat_history = []
         return True
