@@ -93,7 +93,7 @@ class FrontEndAgent:
         pass
 
     
-    def respond_frontend(self, latest_user_input: str) -> str:
+    def respond_frontend(self, latest_user_input: str) -> Dict[str, str]:
         """
         Respond to user's input.
         @param latest_user_input: the latest user input.
@@ -109,7 +109,7 @@ class FrontEndAgent:
             )
             response_text = response.choices[0].message.content
             self.append_agent_output(response_text)
-            return response_text
+            return {"front end response": response_text, "back end response": None}
     
     
     def query_backend(self, latest_user_input: str) -> Dict[str, str]:
