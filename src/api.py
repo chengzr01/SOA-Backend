@@ -58,6 +58,37 @@ class FrontEndAgent:
     
     
     def process_input(self, user_input: str):
+        system_message = self.generate_system_message()
+       	response = client.chat.completions.create(
+            model="glm-4",  # 填写需要调用的模型名称
+            messages= [
+                {"role": "system", "content": system_message}
+            ] + self.chat_history,
+        )
+        # parse the response to extract key information
+        response_text = response.choices[0].message.content
+        parse_dictionary_output_in_string(response_text)
+        
+        
+    def generate_system_message(self) -> str:
+        system_message = "You are an agent that helps people find jobs of their interest. You should seek for the following information provided by user:"
+        for key, value in self.key_information.items():
+            if value is None:
+                system_message += f" {INFORMATION_NAMES[key]},"
+        system_message = system_message[:-1] + "."
+        
+        system_message += "\nThe results should be displayed in the following format:\n"
+        system_message += "{"
+        for key, value in self.key_information.items():
+            system_message += f"{INFORMATION_NAMES[key]}: xxx, "
+        system_message = system_message[:-2] + "}"
+        
+        system_message += "\nDo not repeat the question. Only return the output dictionary."
+        
+        return system_message
+    
+    
+    def parse_dictionary_output_in_string(self, output: str)
         # TODO: Implement this method
         pass
 

@@ -21,10 +21,21 @@ class FrontEndAgentTest(unittest.TestCase):
         for message in self.agent.chat_history:
             print(message)
         print("\n")
+        
+    def test_generate_system_message(self):
+        system_message = self.agent.generate_system_message()
+        print(system_message)
+        assert type(system_message) == type("str")
+        assert system_message is not None
+        assert system_message != ""
+        
+    def test_parse_dictionary_output_in_string():
+        pass
 
 
 if __name__ == "__main__":
     agent = FrontEndAgentTest()
-    agent.test_respond("Hello, how are you?")
-    agent.test_respond("I want to know about Machine Learning and AI Companies. Can you give me some examples?")
+    agent.test_generate_system_message()
+    # agent.test_respond("Hello, how are you?")
+    # agent.test_respond("I want to know about Machine Learning and AI Companies. Can you give me some examples?")
     agent.test_print_past_message()
