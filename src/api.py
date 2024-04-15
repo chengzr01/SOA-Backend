@@ -1,8 +1,6 @@
 from zhipuai import ZhipuAI
 from src.config import ZHIPU_API_KEY
 
-client = ZhipuAI(api_key=ZHIPU_API_KEY)
-
 
 class FrontEndAgent:
     """
@@ -44,3 +42,7 @@ class FrontEndAgent:
     def clear_history(self) -> bool:
         self.chat_history = []
         return True
+
+
+class BackEndAgent():
+    pass
