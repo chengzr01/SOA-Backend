@@ -5,7 +5,13 @@
 - 在`main.py`里设计顶层Django接口，用于前后端通信。
 - 目前需要实现的顶层接口对应的第二层接口：
     - `src/query.py`
-
+- 给到后端数据库用于查询的数据结构：
+    ``` python
+    {
+        "company": "Google", 
+        "job title": "Research Intern"
+    }
+    ```
 
 ## 模块文档
 
