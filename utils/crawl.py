@@ -1,7 +1,8 @@
 import requests
 from bs4 import BeautifulSoup
 import re, json
-from database import *
+from database import create_db
+import sqlite3
 '''
 this function will be called by the main function
 it will take the url as an argument
@@ -9,37 +10,10 @@ it will take the url as an argument
 def entry(url):
     # if url is metacareers.com/jobs/
     if url == 'metacareers.com/jobs/':
-        return metacareers(url)
+        pass
     elif url.startswith('https://www.google.com/about/careers/applications/jobs/results/'):
         return googlecareers(url)
 
-
-def metacareers(url):
-    # URL of the website to scrape
-    url = "https://www.metacareers.com/jobs/"
-
-    # Send an HTTP GET request to the URL
-    response = requests.get(url, verify=False)
-
-    # Parse the HTML content of the webpage
-    soup = BeautifulSoup(response.content, "html.parser")
-    assert response.status_code == 200
-    # print soup pretty
-    print(soup.prettify())
-    # Find and extract job listings
-    job_listings = soup.find_all("div", class_ = "x2izyaf x1lcm9me x1yr5g0i xrt01vj x10y3i5r x4erd3y x9f619 xod5an3 x6ikm8r xyamay9 xc73u3c x1l90r2v x5ib6vp _3qn7 _61-0 _2fyh _3qnf")
-    print(job_listings)
-    # Extract desired information from each job listing
-    for job in job_listings:
-        field = job.find("span", class_="xriwhlb x1u3m9jt x1f6kntn x1rmxxjo").text.strip()
-        location = job.find("span", class_="xriwhlb x1u3m9jt x1f6kntn x1rmxxjo").text.strip()
-        job_title = job.find("div", class_="_6g3g x8y0a91 xriwhlb xngnso2 xeqmlgx xeqr9p9 x1e096f4").text.strip()
-        
-        print("Field:", field)
-        print("Location:", location)
-        print("Job Title:", job_title)
-        print("-" * 50)
-    
 
 def googlecareers(url, save = True, db_name = "google.db"):
     # URL of the website to scrape
@@ -107,8 +81,6 @@ def googlecareers(url, save = True, db_name = "google.db"):
             url = base_url + next_button['href'].split("/")[-1]
             print(url)
             print("going to next page")
-            print("-" * 50)
-            print("-" * 50)
             print("-" * 50)
     if save:
         # Close the connection to the database after crawling
