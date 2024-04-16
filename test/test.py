@@ -19,15 +19,19 @@ class FrontEndAgentTest(unittest.TestCase):
     def test_print_past_message(self):
         print("\nThe following is the chat history:")
         for message in self.agent.chat_history:
-            print(message)
-        print("\n")
+            print(message, '\n')
         
     def test_generate_system_message(self):
-        system_message = self.agent.generate_system_message()
+        system_message = self.agent._generate_system_message()
         print(system_message)
         assert type(system_message) == type("str")
         assert system_message is not None
         assert system_message != ""
+        
+    def test_process_input(self, user_input: str):
+        res = self.agent._process_input(user_input)
+        print(res)
+        assert type(res) == type({})
         
     def test_parse_dictionary_output_in_string():
         pass
@@ -35,7 +39,8 @@ class FrontEndAgentTest(unittest.TestCase):
 
 if __name__ == "__main__":
     agent = FrontEndAgentTest()
-    agent.test_generate_system_message()
+    # agent.test_generate_system_message()
+    agent.test_process_input("I am interested in working at Google for a software engineering position. Can you help me?")
     # agent.test_respond("Hello, how are you?")
     # agent.test_respond("I want to know about Machine Learning and AI Companies. Can you give me some examples?")
-    agent.test_print_past_message()
+    # agent.test_print_past_message()

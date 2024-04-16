@@ -1,5 +1,8 @@
-from zhipuai import ZhipuAI
 from typing import List, Dict, Optional
+import re
+
+from zhipuai import ZhipuAI
+
 from src.config import *
 
 
@@ -15,7 +18,7 @@ class FrontEndAgent:
     def __init__(
         self, 
         api_key : str = ZHIPU_API_KEY,
-        keywords : Optinal[List[str]] = DEFAULT_KEYWORDS, 
+        keywords : Optional[List[str]] = DEFAULT_KEYWORDS, 
         opening : str = DEFAULT_OPENING,
         streaming_on : bool = False,
         user_profile : Optional[Dict[str, str]] = None,
@@ -32,9 +35,11 @@ class FrontEndAgent:
         
         # key information that the users need to provide
         self.key_information = {key : None for key in keywords}
-        for key, value in user_profile.items():
-            if key in self.key_information:
-                self.key_information[key] = value
+        
+        if user_profile is not None:
+            for key, value in user_profile.items():
+                if key in self.key_information:
+                    self.key_information[key] = value
         
         # store user profile
         self.user_profile = user_profile        
@@ -47,8 +52,8 @@ class FrontEndAgent:
         @return: True if the key information is complete; False otherwise.
         """
         # append process input to extract key information
-        self.append_user_input(user_input)
-        self.process_input(user_input)
+        self._append_user_input(user_input)
+        self._process_input(user_input)
         
         # check if key information is complete
         for key, value in self.key_information.items():
@@ -57,30 +62,34 @@ class FrontEndAgent:
         return True
     
     
-    def process_input(self, user_input: str):
-        system_message = self.generate_system_message()
-       	response = client.chat.completions.create(
-            model="glm-4",  # 填写需要调用的模型名称
+    def _process_input(self, user_input: str) -> Dict[str, str]:
+        system_message = self._generate_system_message()
+        self._append_user_input(user_input)
+        
+       	response = self.client.chat.completions.create(
+            model = "glm-4",
             messages= [
                 {"role": "system", "content": system_message}
             ] + self.chat_history,
+            # messages = self.chat_history,
         )
         # parse the response to extract key information
         response_text = response.choices[0].message.content
-        parse_dictionary_output_in_string(response_text)
+        response_dict = self._parse_string_to_dictionary(response_text)
+        return response_dict
         
         
-    def generate_system_message(self) -> str:
+    def _generate_system_message(self) -> str:
         system_message = "You are an agent that helps people find jobs of their interest. You should seek for the following information provided by user:"
         for key, value in self.key_information.items():
             if value is None:
-                system_message += f" {INFORMATION_NAMES[key]},"
+                system_message += f" {key},"
         system_message = system_message[:-1] + "."
         
         system_message += "\nThe results should be displayed in the following format:\n"
         system_message += "{"
         for key, value in self.key_information.items():
-            system_message += f"{INFORMATION_NAMES[key]}: xxx, "
+            system_message += f"{key}: xxx, "
         system_message = system_message[:-2] + "}"
         
         system_message += "\nDo not repeat the question. Only return the output dictionary."
@@ -88,9 +97,19 @@ class FrontEndAgent:
         return system_message
     
     
-    def parse_dictionary_output_in_string(self, output: str)
-        # TODO: Implement this method
-        pass
+    def _parse_string_to_dictionary(self, output: str) -> Dict[str, str]:
+        # input is like: {company name: Google, job title: Software Engineer}
+        # output is like: {"company name": "Google", "job title": "Software Engineer"}
+        try:
+            res = {}
+            pattern = re.compile(r"(\w+): ([^,}]+)")
+            for match in pattern.finditer(output):
+                key = match.group(1)
+                value = match.group(2)
+                res[key] = value
+            return res
+        except:
+            return {}
 
     
     def respond_frontend(self, latest_user_input: str) -> Dict[str, str]:
@@ -116,7 +135,7 @@ class FrontEndAgent:
         return self.key_information     
 
         
-    def append_user_input(self, user_input: str):
+    def _append_user_input(self, user_input: str):
         self.chat_history.append({"role": "user", "content": user_input})
         
         
