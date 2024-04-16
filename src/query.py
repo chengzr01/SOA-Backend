@@ -1,11 +1,12 @@
 from typing import List, Dict, Optional
-from src.api import FrontEndAgent, BackEndAgent
+from src.frontend_agent import FrontendAgent
+from src.backend_agent import BackendAgent
 
 
 def respond_to_user_input(
     user_input: str, 
-    FrontEndAgent: frontend_agent, 
-    BackEndAgent: backend_agent
+    FrontendAgent: frontend_agent, 
+    BackendAgent: backend_agent
 ) -> Dict[str, str]:
     """
     Respond to user's input.

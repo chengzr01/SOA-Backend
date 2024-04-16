@@ -2,12 +2,12 @@ import unittest
 import os, sys
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
-from src.api import FrontEndAgent
+from src.frontend_agent import FrontendAgent
 
 
-class FrontEndAgentTest(unittest.TestCase):
+class FrontendAgentTest(unittest.TestCase):
     def __init__(self):
-        self.agent = FrontEndAgent()
+        self.agent = FrontendAgent()
     
     def test_respond(self, user_input: str):
         response = self.agent.respond(user_input)
@@ -62,7 +62,7 @@ class FrontEndAgentTest(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    agent = FrontEndAgentTest()
+    agent = FrontendAgentTest()
     
     agent.test_frontend_pipeline_complete()
     agent.test_frontend_pipeline_incomplete()

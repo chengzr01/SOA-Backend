@@ -6,7 +6,7 @@ from zhipuai import ZhipuAI
 from src.config import *
 
 
-class FrontEndAgent:
+class FrontendAgent:
     """
     Agent used to interact with users in the front end.
     
