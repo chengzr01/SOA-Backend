@@ -33,16 +33,21 @@ class FrontEndAgent:
         # streaming output
         self.streaming_on = streaming_on
         
-        # key information that the users need to provide
-        self.key_information = {key : None for key in keywords}
+        # store user profile
+        self.user_profile = user_profile
         
-        if user_profile is not None:
-            for key, value in user_profile.items():
+        # key information that the users need to provide
+        self.keywords = keywords
+        self._initialize_key_information()
+        
+    
+    def _initialize_key_information(self) -> Dict[str, str]:
+        self.key_information = {key : None for key in self.keywords}
+        
+        if self.user_profile is not None:
+            for key, value in self.user_profile.items():
                 if key in self.key_information:
                     self.key_information[key] = value
-        
-        # store user profile
-        self.user_profile = user_profile        
                 
     
     def check_key_info_completeness(self, user_input: str) -> bool:
@@ -63,7 +68,7 @@ class FrontEndAgent:
     
     
     def _process_input(self, user_input: str) -> Dict[str, str]:
-        system_message = self._generate_system_message()
+        system_message = self._generate_system_message('user input process')
         self._append_user_input(user_input)
         
        	response = self.client.chat.completions.create(
@@ -76,25 +81,44 @@ class FrontEndAgent:
         # parse the response to extract key information
         response_text = response.choices[0].message.content
         response_dict = self._parse_string_to_dictionary(response_text)
+        
+        # update key information
+        for key, value in response_dict.items():
+            if key in self.key_information:
+                self.key_information[key] = value
+        
         return response_dict
         
         
-    def _generate_system_message(self) -> str:
-        system_message = "You are an agent that helps people find jobs of their interest. You should seek for the following information provided by user:"
-        for key, value in self.key_information.items():
-            if value is None:
-                system_message += f" {key},"
-        system_message = system_message[:-1] + "."
+    def _generate_system_message(self, mode = 'user input process') -> str:
+        assert mode in ['user input process', 'asking for more information']
         
-        system_message += "\nThe results should be displayed in the following format:\n"
-        system_message += "{"
-        for key, value in self.key_information.items():
-            system_message += f"{key}: xxx, "
-        system_message = system_message[:-2] + "}"
+        if mode == 'user input process':
+            system_message = "You are an agent that helps people find jobs of their interest. You should seek for the following information provided by user:"
+            for key, value in self.key_information.items():
+                if value is None:
+                    system_message += f" {key},"
+            system_message = system_message[:-1] + "."
+            
+            system_message += "\nThe results should be displayed in the following format:\n"
+            system_message += "{"
+            for key, value in self.key_information.items():
+                system_message += f"{key}: xxx, "
+            system_message = system_message[:-2] + "}"
+            
+            system_message += "\nIf an information is missing, xxx should be 'None'."
+            system_message += "\nDo not repeat the question. Only return the output dictionary."
+            
+            return system_message
         
-        system_message += "\nDo not repeat the question. Only return the output dictionary."
-        
-        return system_message
+        elif mode == 'asking for more information':
+            system_message = "Ask the user to provide more information about the following:"
+            for key, value in self.key_information.items():
+                if value is None:
+                    system_message += f" {key},"
+            system_message = system_message[:-1] + "."
+            
+            return system_message
     
     
     def _parse_string_to_dictionary(self, output: str) -> Dict[str, str]:
@@ -102,11 +126,11 @@ class FrontEndAgent:
         # output is like: {"company name": "Google", "job title": "Software Engineer"}
         try:
             res = {}
-            pattern = re.compile(r"(\w+): ([^,}]+)")
+            pattern = re.compile(r'([\w\s]+): ([\w\s]+)(, |})')
             for match in pattern.finditer(output):
                 key = match.group(1)
                 value = match.group(2)
-                res[key] = value
+                res[key] = value if value != "None" else None
             return res
         except:
             return {}
@@ -121,14 +145,17 @@ class FrontEndAgent:
         if self.streaming_on:
             raise NotImplementedError("Streaming output is not yet supported.")
         else:
+            system_message = self._generate_system_message(mode='asking for more information')
             response = self.client.chat.completions.create(
                 model = "glm-4",
-                messages = self.chat_history,
+                messages = [
+                    {"role": "system", "content": system_message}
+                ] + self.chat_history,
                 # TODO: Streaming output
             )
             response_text = response.choices[0].message.content
             self.append_agent_output(response_text)
-            return {"front end response": response_text, "back end response": None}
+            return {"frontend response": response_text, "backend response": None}
     
     
     def query_backend(self, latest_user_input: str) -> Dict[str, str]:
@@ -145,6 +172,7 @@ class FrontEndAgent:
 
     def clear_history(self, size=0) -> bool:
         self.chat_history = self.chat_history[:size]
+        self._initialize_key_information()
         return True
 
 

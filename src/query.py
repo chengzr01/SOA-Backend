@@ -9,9 +9,8 @@ def respond_to_user_input(
 ) -> Dict[str, str]:
     """
     Respond to user's input.
-    @return: the response to the user's input.
+    @return: the response to the user's input in a dictionary format.
     """
-    # TODO: return type undefined
     
     complete = agent.check_key_info_completeness(user_input)
     if complete:
