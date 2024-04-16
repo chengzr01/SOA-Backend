@@ -1,93 +1,75 @@
-from django.shortcuts import render
-
-# Create your views here.
-
+from typing import List, Dict, Optional
+from backend.src.frontend_agent import FrontendAgent
+from .models import Job  # Import your Job model here
+import json
 import requests
-from bs4 import BeautifulSoup
-import re, json
-from database import create_db
-import sqlite3
+from django.shortcuts import render
+from django.http import JsonResponse
 
+def search(user_request:Dict[str, str]):
+    '''
+    Search for jobs based on the user's request.
+    @param user_request: the user's request in a dictionary format.
+    @return: the response to the user's request in a dictionary format.
+    '''
+    
+    company = user_request.get("company")
+    job_title = user_request.get("job_title")  # Fix the key name to match your request JSON
+    
+    response = []
 
-'''
-this function will be called by the main function
-it will take the url as an argument
-'''
-def entry(url):
-    # if url is metacareers.com/jobs/
-    if url.startswith('https://www.google.com/about/careers/applications/jobs/results/'):
-        return googlecareers(url)
+    jobs = Job.objects.filter(corporate__iexact=company, job_title__icontains=job_title)
+    
+    # Iterate over the queryset and serialize the results
+    for job in jobs:
+        response.append({
+            "location": job.location, 
+            "job_title": job.job_title,
+            "level": job.level,
+            "corporate": job.corporate,
+            "requirements": json.loads(job.requirements)
+        })
 
-def googlecareers(url, save = True, db_name = "google.db"):
-    # URL of the website to scrape
-    base_url = "https://www.google.com/about/careers/applications/jobs/results/"
-    has_next_page = True
-    num_records_inserted = 0
-    if save:
-        db_name = create_db(db_name)
-        conn = sqlite3.connect(db_name)
-        cursor = conn.cursor()
-    while has_next_page:
-        response = requests.get(url, verify=False)
-        soup = BeautifulSoup(response.content, "html.parser")
-        assert response.status_code == 200
+    # Return the response
+    return response
 
+def get_response(
+    user_input: str, 
+    agent: FrontendAgent    
+) -> Dict[str, str]:
+    """
+    Respond to user's input.
+    @return: the response to the user's input in a dictionary format.
+    """
+    
+    complete = agent.check_key_info_completeness(user_input)
+    if complete:
+        query = agent.query_backend(user_input)
+        # {"company": "Google", "job_title": "software engineering"}
+        res = search(query)
+        # [{"company": "Google", "job_title": "software engineering"}, {"company": "Facebook", "job_title": "data scientist"}]
+        # one and only one of the front end response and back end response should be None
+        return {"front end response": None, "back end response": res}
+    else:
+        response = agent.respond_frontend(user_input)
+        return response
 
-        # print(soup.prettify())
-        # Find and extract job listings
-        job_listings = soup.find_all("div", class_ = "sMn82b")
+def response(request):
+    """
+    Respond to user's input.
+    Request is a POST request with the user's input in the body.
+    @return: the response to the user's input in a dictionary format.
+    """
+    # # test
+    # return  JsonResponse({"test": "test"})
+    user_input = request.POST.get("user_input")
+    agent = FrontendAgent()
+    response = get_response(user_input, agent)
+    return JsonResponse(response)   # Return the response as a JSON object
 
-        for job in job_listings:
-            try:
-                location = job.find("span", class_="r0wTof").text.strip()
-            except AttributeError:
-                location = "Not specified"
-            try:
-                level = job.find("span", class_ = "wVSTAb").text.strip()
-            except AttributeError:
-                try:
-                    level = job.find("span", class_ = "RP7SMd").find("span").text.strip()
-                except:
-                    level = "Not specified"
-            try:
-                corporate = job.find("span", class_ = "RP7SMd").find("span").text.strip()
-            except:
-                corporate = "Not specified"
-            try:
-                uls = job.find("ul")
-                requirements = [li.get_text() for li in uls.find_all('li')]
-            except:
-                requirements = "Not specified"
-            job_title = job.find("h3").text.strip()
-            if save:
-                # Insert the job listing into the database
-                cursor.execute('''INSERT INTO job_listings (location, job_title, level, corporate, requirements)
-                          VALUES (?, ?, ?, ?, ?)''', (location, job_title, level, corporate, json.dumps(requirements)))
-                num_records_inserted += 1
-            # print("Location:", location)
-            # print("Job Title:", job_title)
-            # print("Level:", level)
-            # print("Corperate:", corperate)
-            # print("Requirements:", requirements)
-        
-            # print("-" * 50)
-        if save:
-            print("Number of records inserted:", num_records_inserted)
-            conn.commit()
-            num_records_inserted = 0
-            
-        
-        # search for the next page
-        next_button = soup.find_all("a", class_="WpHeLc VfPpkd-mRLv6")[-1]
-        has_next_page = next_button is not None
-        # If there is a next page, update the URL to scrape the next page
-        if has_next_page:
-            url = base_url + next_button['href'].split("/")[-1]
-            print(url)
-            print("going to next page")
-            print("-" * 50)
-    if save:
-        # Close the connection to the database after crawling
-        conn.close()
-        
-entry("https://www.google.com/about/careers/applications/jobs/results/")
+def index(request):
+    """
+    Render the index page.
+    @return: the index page.
+    """
+    return render(request, 'index.html')  # TODO

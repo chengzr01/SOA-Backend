@@ -21,7 +21,11 @@ def googlecareers(url, save = True, db_name = "google.db"):
     page_number = 1
     num_records_inserted = 0
     while has_next_page:
-        print("----Scraping page ", page_number, "----")
+        if page_number <= 40:
+            page_number += 1
+            continue
+        print("-" * 20, "Scraping page ", page_number, "-" * 20)
+        url = base_url + f"?page={page_number}"
         response = requests.get(url, verify=False)
         soup = BeautifulSoup(response.content, "html.parser")
         assert response.status_code == 200
@@ -89,8 +93,6 @@ def googlecareers(url, save = True, db_name = "google.db"):
             print(url)
             print("going to next page")
             print("-" * 50)
-            if page_number >= 20:
-                break
     # if save:
     #     # Close the connection to the database after crawling
     #     conn.close()
