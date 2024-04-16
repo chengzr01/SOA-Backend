@@ -1,8 +1,9 @@
 import unittest
 import os, sys
-sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 from src.frontend_agent import FrontendAgent
+from src.config import *
 
 
 class FrontendAgentTest(unittest.TestCase):

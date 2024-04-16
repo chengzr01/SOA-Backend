@@ -6,3 +6,12 @@ DEFAULT_KEYWORDS = [
     "company name", "job title",
     # "industry", "salary", "location", "job description",
 ]
+
+NAMING_CONVERSION = {
+    "company name": "corporate",
+    "job title": "job_title",
+    "location": "location",
+    # "industry": "industry",
+    # "salary": "salary",
+    # "job description": "job_description",
+}
