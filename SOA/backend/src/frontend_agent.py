@@ -49,7 +49,15 @@ class FrontendAgent:
                 if key in self.key_information:
                     self.key_information[key] = value
                 
-    
+   
+    def flush(self) -> bool:
+        """
+        Clear the chat history and key information.
+        """
+        self.chat_history = []
+        self._initialize_key_information()
+        return True
+     
     def check_key_info_completeness(self, user_input: str) -> bool:
         """
         Process user input to extract key information.

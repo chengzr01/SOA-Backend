@@ -81,3 +81,20 @@ def index(request):
     @return: the index page.
     """
     return render(request, 'index.html')  # TODO
+
+def flush(request):
+    """
+    Flush the chat history and key information.
+    @return: a JSON response.
+    """
+    agent.flush()
+    return JsonResponse({"message": "Chat history and key information have been flushed.", "success": True})
+
+def login(request):
+    """
+    Log in the user.
+    @return: a JSON response.
+    """
+    username = request.POST.get("username")
+    password = request.POST.get("password")
+    
