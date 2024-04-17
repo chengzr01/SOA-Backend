@@ -8,7 +8,7 @@
 - 给到后端数据库用于查询的数据结构：
     ``` python
     {
-        "company": "Google", 
+        "company name": "Google", 
         "job title": "Research Intern"
     }
     ```
@@ -57,4 +57,4 @@ example:
 }
 ```
 
-在SOA/database/db.sqlite3中保存有～60条目
+现在在SOA/database/db.sqlite3中保存有～2500条目
