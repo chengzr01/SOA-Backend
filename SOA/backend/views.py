@@ -7,6 +7,9 @@ from django.shortcuts import render
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 
+
+agent = FrontendAgent()
+
 @csrf_exempt
 def search(user_request:Dict[str, str]):
     '''
@@ -68,7 +71,6 @@ def response(request):
     user_input = request.POST.get("user_input")
     # print(user_input)
     assert user_input is not None, "user_input is None"
-    agent = FrontendAgent()
     response = get_response(user_input, agent)
     return JsonResponse(response)   # Return the response as a JSON object
 
