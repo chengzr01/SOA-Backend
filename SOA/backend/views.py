@@ -5,17 +5,18 @@ import json
 import requests
 from django.shortcuts import render
 from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
 
+@csrf_exempt
 def search(user_request:Dict[str, str]):
     '''
     Search for jobs based on the user's request.
     @param user_request: the user's request in a dictionary format.
     @return: the response to the user's request in a dictionary format.
     '''
-    
-    company = user_request.get("company")
-    job_title = user_request.get("job_title")  # Fix the key name to match your request JSON
-    
+    print(user_request)
+    company = user_request["company name"]
+    job_title = user_request["job title"]
     response = []
 
     jobs = Job.objects.filter(corporate__iexact=company, job_title__icontains=job_title)
@@ -33,6 +34,7 @@ def search(user_request:Dict[str, str]):
     # Return the response
     return response
 
+@csrf_exempt
 def get_response(
     user_input: str, 
     agent: FrontendAgent    
@@ -54,6 +56,7 @@ def get_response(
         response = agent.respond_frontend(user_input)
         return response
 
+@csrf_exempt
 def response(request):
     """
     Respond to user's input.
@@ -63,10 +66,13 @@ def response(request):
     # # test
     # return  JsonResponse({"test": "test"})
     user_input = request.POST.get("user_input")
+    # print(user_input)
+    assert user_input is not None, "user_input is None"
     agent = FrontendAgent()
     response = get_response(user_input, agent)
     return JsonResponse(response)   # Return the response as a JSON object
 
+@csrf_exempt
 def index(request):
     """
     Render the index page.

@@ -21,7 +21,7 @@ def googlecareers(url, save = True, db_name = "google.db"):
     page_number = 1
     num_records_inserted = 0
     while has_next_page:
-        if page_number <= 40:
+        if page_number <= 117:
             page_number += 1
             continue
         print("-" * 20, "Scraping page ", page_number, "-" * 20)
