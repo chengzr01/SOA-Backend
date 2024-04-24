@@ -1,5 +1,8 @@
 from typing import List, Dict, Optional
 import re
+from backend.models import ChatMessage
+from django.contrib.auth.models import User
+from django.db import models
 
 from zhipuai import ZhipuAI
 
@@ -23,6 +26,7 @@ class FrontendAgent:
         streaming_on : bool = False,
         user_profile : Optional[Dict[str, str]] = None,
     ):
+        self.user = None
         # ZhipuAI client object
         self.client = ZhipuAI(api_key=api_key)
         
@@ -40,6 +44,9 @@ class FrontendAgent:
         self.keywords = keywords
         self._initialize_key_information()
         
+    def switch_user(self, user: User):
+        self.user = user
+        self._switch_history()
     
     def _initialize_key_information(self) -> Dict[str, str]:
         self.key_information = {key : None for key in self.keywords}
@@ -57,7 +64,16 @@ class FrontendAgent:
         self.chat_history = []
         self._initialize_key_information()
         return True
-     
+    
+    def __reset_chat_history(self):
+        """
+        Reset the chat history and key information.
+        """
+        self.chat_history = []
+        self._initialize_key_information()
+        # also delete all chat messages from the database
+        ChatMessage.objects.all().delete()
+    
     def check_key_info_completeness(self, user_input: str) -> bool:
         """
         Process user input to extract key information.
@@ -172,10 +188,11 @@ class FrontendAgent:
         
     def _append_user_input(self, user_input: str):
         self.chat_history.append({"role": "user", "content": user_input})
-        
-        
+        self._store_chat_message( {"role": "user", "content": user_input})
+
     def append_agent_output(self, agent_output: str):
         self.chat_history.append({"role": "assistant", "content": agent_output})
+        self._store_chat_message({"role": "assistant", "content": agent_output})
 
 
     def clear_history(self, size=0) -> bool:
@@ -183,6 +200,43 @@ class FrontendAgent:
         self._initialize_key_information()
         return True
 
+    def _store_chat_message(self, chat_message):
+        """
+        Store the chat history in the database.
+        """
+        sender_role = chat_message["role"]
+        content = chat_message["content"]
+        is_user_message = True if sender_role == "user" else False
+        messsage_object = ChatMessage.objects.create(
+            sender = self.user if is_user_message else None,
+            receiver = self.user if not is_user_message else None,
+            message=content,
+            is_user_message=is_user_message
+        )
+        # save the chat history to the database
+        messsage_object.save()
+        
+
+    def _switch_history(self):
+        """
+        Switch chat history based on authentication information.
+        """
+
+        # Retrieve chat history for the current user
+        user_chat_history = ChatMessage.objects.filter(
+            models.Q(sender = self.user) | models.Q(receiver = self.user)
+        ).order_by('id')
+
+        # Convert chat history to the format used by FrontendAgent
+        self.chat_history = []
+        for message in user_chat_history:
+            sender_role = "user" if message.is_user_message else "assistant"
+            self.chat_history.append({
+                "role": sender_role,
+                "content": message.message
+            })
+            
+            
 
 class BackEndAgent():
     pass

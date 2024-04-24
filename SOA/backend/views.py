@@ -1,14 +1,18 @@
 from typing import List, Dict, Optional
 from backend.src.frontend_agent import FrontendAgent
-from .models import Job  # Import your Job model here
+from .models import Job  
+from django.contrib.auth.models import User
+from django.contrib.auth import authenticate, login
 import json
-import requests
 from django.shortcuts import render
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.signals import user_logged_in
+from django.dispatch import receiver
 
 
-agent = FrontendAgent()
+agent = FrontendAgent() # we only have one agent but will update chat history everytime user changes
 
 @csrf_exempt
 def search(user_request:Dict[str, str]):
@@ -60,6 +64,7 @@ def get_response(
         return response
 
 @csrf_exempt
+@login_required
 def response(request):
     """
     Respond to user's input.
@@ -82,6 +87,7 @@ def index(request):
     """
     return render(request, 'index.html')  # TODO
 
+@login_required
 def flush(request):
     """
     Flush the chat history and key information.
@@ -90,11 +96,33 @@ def flush(request):
     agent.flush()
     return JsonResponse({"message": "Chat history and key information have been flushed.", "success": True})
 
-def login(request):
+
+def signup(request):
     """
-    Log in the user.
+    Sign up a new user.
     @return: a JSON response.
     """
     username = request.POST.get("username")
     password = request.POST.get("password")
+    email = request.POST.get("email")
+    user = User.objects.create_user(username = username, email=email, password=password)
+    user.save()
+    # try sign up
+    # Log in the user
+    user = authenticate(request, username=username, password=password)
+    if user is not None:
+        login(request, user)
+        # User is logged in successfully
+        return JsonResponse({"message": "Sign up successful.", "success": True})
+    else:
+        # Authentication failed
+        return JsonResponse({"message": "Failed to log in after sign up.", "success": False})
+    
+@receiver(user_logged_in)
+def on_user_logged_in(sender, request, user, **kwargs):
+    """
+    Log the user's chat history in the database when the user logs in.
+    """
+    print("User logged in: ", user) #debug
+    agent.switch_user(user)
     
