@@ -9,9 +9,13 @@ class Job(models.Model):
     corporate = models.TextField()
     requirements = models.TextField()
 
+def validate_sender_or_receiver_exists(sender, receiver, **kwargs):
+    if sender is None and receiver is None:
+        raise ValidationError("Either sender or receiver must be provided.")
+
 class ChatMessage(models.Model):
-    sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name='sent_messages')
-    receiver = models.ForeignKey(User, on_delete=models.CASCADE, related_name='received_messages')
+    sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name='sent_messages', blank=True, null=True)
+    receiver = models.ForeignKey(User, on_delete=models.CASCADE, related_name='received_messages', blank=True, null=True)
     message = models.TextField()
     is_user_message = models.BooleanField(default=False)
 
@@ -21,3 +25,6 @@ class ChatMessage(models.Model):
     def __str__(self):
         sender_type = "user" if self.is_user_message else "system"
         return f"[{sender_type}]: {self.message}"
+
+    def clean(self):
+        validate_sender_or_receiver_exists(self.sender, self.receiver)

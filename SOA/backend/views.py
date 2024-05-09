@@ -87,6 +87,7 @@ def index(request):
     """
     return render(request, 'index.html')  # TODO
 
+@csrf_exempt
 @login_required
 def flush(request):
     """
@@ -94,9 +95,17 @@ def flush(request):
     @return: a JSON response.
     """
     agent.flush()
-    return JsonResponse({"message": "Chat history and key information have been flushed.", "success": True})
+    return JsonResponse({"message": "Chat history and key information regarding the user have been flushed.", "success": True})
 
+@csrf_exempt
+def reset(request):
+    '''
+    delete every chat history and key information
+   et '''
+    agent.reset()
+    return JsonResponse({"message": "All chat history and key information have been reset.", "success": True})
 
+@csrf_exempt
 def signup(request):
     """
     Sign up a new user.
@@ -117,12 +126,13 @@ def signup(request):
     else:
         # Authentication failed
         return JsonResponse({"message": "Failed to log in after sign up.", "success": False})
-    
+
+@csrf_exempt
 @receiver(user_logged_in)
 def on_user_logged_in(sender, request, user, **kwargs):
     """
     Log the user's chat history in the database when the user logs in.
     """
-    print("User logged in: ", user) #debug
+    print("User logged in: ", user) #DEBUG
     agent.switch_user(user)
     
