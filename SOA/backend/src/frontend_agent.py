@@ -32,7 +32,13 @@ class FrontendAgent:
         
         # chat history of the user and the agent
         self.chat_history = []
-        self.append_agent_output(opening)
+        # we temporarily comment out this
+        # because we initialize before the user logs in
+        # so at this point we are unable to determine the receiver of the opening message
+        # we will restore the opening message manually
+        # everytime the user log in
+        
+        # self.append_agent_output(opening)
         
         # streaming output
         self.streaming_on = streaming_on
@@ -46,6 +52,7 @@ class FrontendAgent:
         
     def switch_user(self, user: User):
         self.user = user
+        print('Switching user to:', user)
         self._switch_history()
     
     def _initialize_key_information(self) -> Dict[str, str]:
@@ -59,12 +66,32 @@ class FrontendAgent:
    
     def flush(self) -> bool:
         """
-        Clear the chat history and key information.
+        Clear the chat history and key information for the current user.
+        Deleting from the dataset and cache 
         """
-        self.chat_history = []
+        self.__reset_chat_history_for_user()
         self._initialize_key_information()
         return True
     
+    def reset(self) -> bool:
+        """
+        Clear the chat history and key information for all users.
+        Deleting from the dataset and cache
+        """
+        self.__reset_chat_history()
+        return True
+    
+    def __reset_chat_history_for_user(self):
+        """
+        Reset the chat history and key information.
+        """
+        self.chat_history = []
+        self._initialize_key_information()
+        # also delete all chat messages about the current user from the database
+        ChatMessage.objects.filter(
+            models.Q(sender = self.user) | models.Q(receiver = self.user)
+        ).delete()
+        
     def __reset_chat_history(self):
         """
         Reset the chat history and key information.
@@ -82,6 +109,7 @@ class FrontendAgent:
         """
         # append process input to extract key information
         self._append_user_input(user_input)
+        self._store_chat_message( {"role": "user", "content": user_input})
         self._process_input(user_input)
         
         # check if key information is complete
@@ -94,7 +122,7 @@ class FrontendAgent:
     def _process_input(self, user_input: str) -> Dict[str, str]:
         system_message = self._generate_system_message('user input process')
         self._append_user_input(user_input)
-        
+        self._store_chat_message( {"role": "user", "content": user_input})
        	response = self.client.chat.completions.create(
             model = "glm-4",
             messages= [
@@ -179,6 +207,7 @@ class FrontendAgent:
             )
             response_text = response.choices[0].message.content
             self.append_agent_output(response_text)
+            self._store_chat_message({"role": "assistant", "content": response_text})
             return {"frontend response": response_text, "backend response": None}
     
     
@@ -188,11 +217,11 @@ class FrontendAgent:
         
     def _append_user_input(self, user_input: str):
         self.chat_history.append({"role": "user", "content": user_input})
-        self._store_chat_message( {"role": "user", "content": user_input})
+        # self._store_chat_message( {"role": "user", "content": user_input})
 
     def append_agent_output(self, agent_output: str):
         self.chat_history.append({"role": "assistant", "content": agent_output})
-        self._store_chat_message({"role": "assistant", "content": agent_output})
+        # self._store_chat_message({"role": "assistant", "content": agent_output})
 
 
     def clear_history(self, size=0) -> bool:
@@ -221,7 +250,7 @@ class FrontendAgent:
         """
         Switch chat history based on authentication information.
         """
-
+        print('Switching chat history...')
         # Retrieve chat history for the current user
         user_chat_history = ChatMessage.objects.filter(
             models.Q(sender = self.user) | models.Q(receiver = self.user)
@@ -229,12 +258,18 @@ class FrontendAgent:
 
         # Convert chat history to the format used by FrontendAgent
         self.chat_history = []
+        # first append the opening sentence
+        self.append_agent_output(DEFAULT_OPENING)
+        
         for message in user_chat_history:
             sender_role = "user" if message.is_user_message else "assistant"
             self.chat_history.append({
                 "role": sender_role,
                 "content": message.message
             })
+            
+        # DEBUG
+        print(self.chat_history)
             
             
 
