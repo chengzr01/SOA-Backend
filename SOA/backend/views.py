@@ -1,5 +1,6 @@
 from typing import List, Dict, Optional
 from backend.src.frontend_agent import FrontendAgent
+from backend.src.agent_manager import AgentManager
 from .models import Job  
 from django.contrib.auth.models import User
 from django.contrib.auth import authenticate, login
@@ -12,7 +13,9 @@ from django.contrib.auth.signals import user_logged_in
 from django.dispatch import receiver
 
 
-agent = FrontendAgent() # we only have one agent but will update chat history everytime user changes
+# agent = FrontendAgent() # we only have one agent but will update chat history everytime user changes
+agent_manager = AgentManager()
+
 
 @csrf_exempt
 def search(user_request:Dict[str, str]):
@@ -43,13 +46,17 @@ def search(user_request:Dict[str, str]):
 
 @csrf_exempt
 def get_response(
-    user_input: str, 
-    agent: FrontendAgent    
+    user_input: str,
+    username: str,  
 ) -> Dict[str, str]:
     """
     Respond to user's input.
     @return: the response to the user's input in a dictionary format.
     """
+    
+    agent = agent_manager.get_agent(username)
+    if agent is None:
+        return {"front end response": None, "back end response": None}
     
     complete = agent.check_key_info_completeness(user_input)
     if complete:
@@ -65,16 +72,17 @@ def get_response(
 
 @csrf_exempt
 @login_required
-def response(request):
+def response(request, username: str):
     """
     Respond to user's input.
     Request is a POST request with the user's input in the body.
     @return: the response to the user's input in a dictionary format.
     """
-    # # test
-    # return  JsonResponse({"test": "test"})
+    agent = agent_manager.get_agent(username)
+    if agent is None:
+        return JsonResponse({"front end response": None, "back end response": None})
+    
     user_input = request.POST.get("user_input")
-    # print(user_input)
     assert user_input is not None, "user_input is None"
     response = get_response(user_input, agent)
     return JsonResponse(response)   # Return the response as a JSON object
@@ -89,19 +97,27 @@ def index(request):
 
 @csrf_exempt
 @login_required
-def flush(request):
+def flush(request, username: str):
     """
     Flush the chat history and key information.
     @return: a JSON response.
     """
+    agent = agent_manager.get_agent(username)
+    if agent is None:
+        return JsonResponse({"message": "Agent not found.", "success": False})
+    
     agent.flush()
     return JsonResponse({"message": "Chat history and key information regarding the user have been flushed.", "success": True})
 
 @csrf_exempt
-def reset(request):
+def reset(request, username: str):
     '''
     delete every chat history and key information
-   et '''
+    et '''
+    agent = agent_manager.get_agent(username)
+    if agent is None:
+        return JsonResponse({"message": "Agent not found.", "success": False})
+    
     agent.reset()
     return JsonResponse({"message": "All chat history and key information have been reset.", "success": True})
 
@@ -116,6 +132,9 @@ def signup(request):
     email = request.POST.get("email")
     user = User.objects.create_user(username = username, email=email, password=password)
     user.save()
+    
+    agent_manager.add_agent(username, agent)
+    
     # try sign up
     # Log in the user
     user = authenticate(request, username=username, password=password)
@@ -129,10 +148,24 @@ def signup(request):
 
 @csrf_exempt
 @receiver(user_logged_in)
-def on_user_logged_in(sender, request, user, **kwargs):
+def on_user_logged_in(sender, request, user: User, username: str, **kwargs):
     """
     Log the user's chat history in the database when the user logs in.
     """
-    print("User logged in: ", user) #DEBUG
-    agent.switch_user(user)
+    # print("User logged in: ", user) #DEBUG
+    # agent.switch_user(user)
     
+    # TODO: get agent from backend
+    agent = FrontendAgent()
+    agent.switch_user(user)
+    agent_manager.add_agent(username, agent)
+
+
+@csrf_exempt
+@receiver(user_logged_out)
+def on_user_logged_out(sender, request, username: str, **kwargs):
+    """
+    Log the user's chat history in the database when the user logs out.
+    """
+    # print("User logged out: ", user) #DEBUG
+    agent_manager.remove_agent(username)
