@@ -28,3 +28,8 @@ class ChatMessage(models.Model):
 
     def clean(self):
         validate_sender_or_receiver_exists(self.sender, self.receiver)
+
+
+class UserProfile(models.Model):
+    pass
+    # TODO: Add fields for user profile

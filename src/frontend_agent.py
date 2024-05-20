@@ -151,7 +151,6 @@ class FrontendAgent:
                 messages = [
                     {"role": "system", "content": system_message}
                 ] + self.chat_history,
-                # TODO: Streaming output
             )
             response_text = response.choices[0].message.content
             self.append_agent_output(response_text)

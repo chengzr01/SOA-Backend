@@ -211,8 +211,8 @@ class FrontendAgent:
             return {"frontend response": response_text, "backend response": None}
     
     
-    def query_backend(self, latest_user_input: str) -> Dict[str, str]:
-        return self.key_information     
+    def query_backend(self) -> Dict[str, str]:
+        return self.key_information
 
         
     def _append_user_input(self, user_input: str):
