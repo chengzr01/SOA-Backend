@@ -56,14 +56,20 @@ class BackendAgent:
     def _switch_history(self):
         # get user profile from database
         username = self.user.username
-        userProfile = UserProfile.objects.get(username=username)
-        if userProfile.location:
-            self.user_profile["location"] = userProfile.location
-        if userProfile.job_title:
-            self.user_profile["job title"] = userProfile.job_title
-        if userProfile.level:
-            self.user_profile["level"] = userProfile.level
-        if userProfile.corporate:
-            self.user_profile["company name"] = userProfile.corporate
-        if userProfile.requirements:
-            self.user_profile["requirements"] = userProfile.requirements
+        # try to get user profile from database
+        try:
+            userProfile = UserProfile.objects.get(username=username)
+            # update user profile
+            if userProfile.location:
+                self.user_profile["location"] = userProfile.location
+            if userProfile.job_title:
+                self.user_profile["job title"] = userProfile.job_title
+            if userProfile.level:
+                self.user_profile["level"] = userProfile.level
+            if userProfile.corporate:
+                self.user_profile["company name"] = userProfile.corporate
+            if userProfile.requirements:
+                self.user_profile["requirements"] = userProfile.requirements
+        except UserProfile.DoesNotExist:
+            # if user profile does not exist, create one
+            pass

@@ -16,6 +16,7 @@ class AgentManager:
         agent.switch_user(user)
         if username not in self.frontend_agents:
             self.frontend_agents[username] = agent
+            print(f"Added succesfully an frontend agent for {username}")
             return True
         return False
     
@@ -41,6 +42,9 @@ class AgentManager:
         return False
 
     def get_frontend_agent(self, username: str) -> Optional[FrontendAgent]:
+        print(self.frontend_agents)
+        print(username)
+        print(self.frontend_agents[username])
         if username not in self.frontend_agents:
             return None
         return self.frontend_agents[username]
@@ -50,3 +54,14 @@ class AgentManager:
             return None
         return self.backend_agents[username]
     
+    def show_current_state(self, user: User): # debug
+        print("-"* 20)
+        print("Current frontend agents:")
+        for agent in self.frontend_agents.values():
+            # print agent name
+            print(agent.user.username)
+        print("Current backend agents:")
+        for agent in self.backend_agents.values():
+            # print agent name
+            print(agent.user.username)
+        print("-"* 20)
