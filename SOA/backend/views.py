@@ -145,8 +145,8 @@ def response(request):
     @return: the response to the user's input in a dictionary format.
     """
     body = json.loads(request.body)
-    user_name = body["user_name"]
-    user_input = body["user_input"]
+    user_name = body["username"]
+    user_input = body["userinput"]
     agent = agent_manager.get_frontend_agent(user_name)
     if agent is None:
         return JsonResponse({"front end response": None, "back end response": None})
@@ -154,6 +154,13 @@ def response(request):
     assert user_input is not None, "user_input is None"
     # Return the response as a JSON object
     return JsonResponse(get_response(user_input, agent))
+
+
+@csrf_exempt
+def recommendation(request):
+    body = json.loads(request.body)
+    user_name = body["username"]
+    return JsonResponse(get_recommendation(username=user_name))
 
 
 @csrf_exempt
@@ -201,9 +208,10 @@ def signup(request):
     Sign up a new user.
     @return: a JSON response.
     """
-    username = request.POST.get("username")
-    password = request.POST.get("password")
-    email = request.POST.get("email")
+    body = json.loads(request.body)
+    username = body["username"]
+    password = body["password"]
+    email = body["email"]
     user = User.objects.create_user(
         username=username, email=email, password=password)
     user.save()
@@ -217,7 +225,7 @@ def signup(request):
 
     # try sign up
     # Log in the user
-    user = authenticate(request, username=username, password=password)
+    user = authenticate(username=username, password=password)
     if user is not None:
         login(request, user)
         # User is logged in successfully
