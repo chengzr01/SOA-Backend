@@ -1,6 +1,6 @@
 from typing import List, Dict, Optional
 from backend.src.agent_manager import AgentManager
-from .models import Job  
+from .models import Job
 from django.contrib.auth.models import User
 from django.contrib.auth import authenticate, login
 import json
@@ -8,14 +8,14 @@ from django.shortcuts import render
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth.signals import user_logged_in
+from django.contrib.auth.signals import user_logged_in, user_logged_out
 from django.dispatch import receiver
 
 agent_manager = AgentManager()
 
 
 @csrf_exempt
-def search(user_request:Dict[str, str]):
+def search(user_request: Dict[str, str]):
     '''
     Search for jobs based on the user's request.
     @param user_request: the user's request in a dictionary format.
@@ -25,17 +25,18 @@ def search(user_request:Dict[str, str]):
     company = user_request["company name"]
     job_title = user_request["job title"]
     response = []
-    
+
     # TODO: update search query in backend agent
     backend_agent = agent_manager.get_backend_agent(username)
     backend_agent.update_user_profile(user_request)
 
-    jobs = Job.objects.filter(corporate__iexact=company, job_title__icontains=job_title)
-    
+    jobs = Job.objects.filter(
+        corporate__iexact=company, job_title__icontains=job_title)
+
     # Iterate over the queryset and serialize the results
     for job in jobs:
         response.append({
-            "location": job.location, 
+            "location": job.location,
             "job_title": job.job_title,
             "level": job.level,
             "corporate": job.corporate,
@@ -45,21 +46,22 @@ def search(user_request:Dict[str, str]):
     # Return the response
     return response
 
+
 @csrf_exempt
 # TODO! new argument: username
 def get_response(
     user_input: str,
-    username: str,  
+    username: str,
 ) -> Dict[str, str]:
     """
     Respond to user's input.
     @return: the response to the user's input in a dictionary format.
     """
-    
+
     agent = agent_manager.get_frontend_agent(username)
     if agent is None:
         return {"front end response": None, "back end response": None}
-    
+
     complete = agent.check_key_info_completeness(user_input)
     if complete:
         query = agent.query_backend()
@@ -84,29 +86,32 @@ def get_recommendation(
     agent = agent_manager.get_backend_agent(username)
     if agent is None:
         return {"front end response": None, "back end response": None}
-    
+
     query = agent.query_backend()
     res = search(query)
     return {"front end response": None, "back end response": res}
 
 
 @csrf_exempt
-@login_required
+# @login_required
 # TODO! new argument: username
-def response(request, username: str):
+def response(request):
     """
     Respond to user's input.
     Request is a POST request with the user's input in the body.
     @return: the response to the user's input in a dictionary format.
     """
-    agent = agent_manager.get_frontend_agent(username)
+    body = json.loads(request.body)
+    user_name = body["user_name"]
+    user_input = body["user_input"]
+    agent = agent_manager.get_frontend_agent(user_name)
     if agent is None:
         return JsonResponse({"front end response": None, "back end response": None})
-    
-    user_input = request.POST.get("user_input")
+
     assert user_input is not None, "user_input is None"
-    response = get_response(user_input, agent)
-    return JsonResponse(response)   # Return the response as a JSON object
+    # Return the response as a JSON object
+    return JsonResponse(get_response(user_input, agent))
+
 
 @csrf_exempt
 def index(request):
@@ -115,6 +120,7 @@ def index(request):
     @return: the index page.
     """
     return render(request, 'index.html')  # TODO
+
 
 @csrf_exempt
 @login_required
@@ -127,9 +133,10 @@ def flush(request, username: str):
     agent = agent_manager.get_frontend_agent(username)
     if agent is None:
         return JsonResponse({"message": "Agent not found.", "success": False})
-    
+
     agent.flush()
     return JsonResponse({"message": "Chat history and key information regarding the user have been flushed.", "success": True})
+
 
 @csrf_exempt
 # TODO! new argument: username
@@ -140,9 +147,10 @@ def reset(request, username: str):
     agent = agent_manager.get_frontend_agent(username)
     if agent is None:
         return JsonResponse({"message": "Agent not found.", "success": False})
-    
+
     agent.reset()
     return JsonResponse({"message": "All chat history and key information have been reset.", "success": True})
+
 
 @csrf_exempt
 def signup(request):
@@ -153,16 +161,17 @@ def signup(request):
     username = request.POST.get("username")
     password = request.POST.get("password")
     email = request.POST.get("email")
-    user = User.objects.create_user(username = username, email=email, password=password)
+    user = User.objects.create_user(
+        username=username, email=email, password=password)
     user.save()
-    
+
     # TODO? : Really need to add frontend agent and backend agent here
     # if we have already added frontend agent and backend agent in on_user_logged_in?
     # disable for now
-    
+
     # agent_manager.add_frontend_agent(username, agent)
     # agent_manager.add_backend_agent(username, agent)
-    
+
     # try sign up
     # Log in the user
     user = authenticate(request, username=username, password=password)
@@ -173,6 +182,7 @@ def signup(request):
     else:
         # Authentication failed
         return JsonResponse({"message": "Failed to log in after sign up.", "success": False})
+
 
 @csrf_exempt
 @receiver(user_logged_in)

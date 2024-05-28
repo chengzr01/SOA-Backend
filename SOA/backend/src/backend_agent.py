@@ -1,4 +1,7 @@
-from config import DEFAULT_KEYWORDS
+from .config import DEFAULT_KEYWORDS
+from typing import List, Optional, Dict
+
+from django.contrib.auth.models import User
 
 
 class BackendAgent:
@@ -12,27 +15,27 @@ class BackendAgent:
             for key, value in user_profile.items():
                 if key in keywords and value is not None:
                     self.user_profile[key] = value
-            
+
         self.keywords = keywords
-        
+
     def query_backend(self) -> Dict[str, str]:
         return self.user_profile
-    
+
     def update_user_profile(self, user_profile: Dict[str, str]) -> None:
         for key, value in user_profile.items():
             if key in self.keywords:
                 self.user_profile[key] = value
         self.save_user_profile()
-        
+
     def save_user_profile(self) -> None:
         # TODO: Save user profile to database
         pass
-        
+
     def switch_user(self, user: User):
         self.user = user
         print('Switching user to:', user)
         self._switch_history()
-        
+
     def _switch_history(self):
         # TODO: Load user history from database
         pass
