@@ -42,10 +42,14 @@ class AgentManager:
         return False
 
     def get_frontend_agent(self, username: str) -> Optional[FrontendAgent]:
-        print(self.frontend_agents)
-        print(username)
-        print(self.frontend_agents[username])
+        # print(self.frontend_agents)
+        # print(username)
+        # print(self.frontend_agents[username])
+        print("#"*10)
+        print(username in self.frontend_agents)
+        print("#"*10)
         if username not in self.frontend_agents:
+            print("????????")
             return None
         return self.frontend_agents[username]
     

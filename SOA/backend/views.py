@@ -41,7 +41,7 @@ def search(user_request: Dict[str, str], username: str):
         requirements = user_request["requirements"]
         try:
             requirements = json.loads(requirements)  # convert string to list
-        except json.JSONDecodeError:
+        except:
             requirements = None
     except KeyError:
         requirements = None
@@ -95,13 +95,12 @@ def search(user_request: Dict[str, str], username: str):
 # TODO! new argument: username
 def get_response(
     user_input: str,
-    username: str,
+    username: str
 ) -> Dict[str, str]:
     """
     Respond to user's input.
     @return: the response to the user's input in a dictionary format.
     """
-
     agent = agent_manager.get_frontend_agent(username)
     if agent is None:
         return {"front end response": None, "back end response": None}
@@ -149,14 +148,9 @@ def response(request):
     user_name = request.user.username
     user_input = body["userinput"]
     print("[DEBUG] response function: ", user_name) #DEBUG
-    agent_manager.show_current_state(user_name) #DEBUG
-    agent = agent_manager.get_frontend_agent(user_name)
-    if agent is None:
-        return JsonResponse({"front end response": None, "back end response": None})
-
     assert user_input is not None, "user_input is None"
     # Return the response as a JSON object
-    return JsonResponse(get_response(user_input, agent))
+    return JsonResponse(get_response(user_input, user_name))
 
 
 @csrf_exempt
