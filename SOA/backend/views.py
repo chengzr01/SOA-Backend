@@ -11,6 +11,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.signals import user_logged_in, user_logged_out
 from django.dispatch import receiver
 from django.db.models import Q
+from django.db.utils import IntegrityError
 
 agent_manager = AgentManager()
 
@@ -119,7 +120,7 @@ def get_response(
 
 
 @csrf_exempt
-def get_recommendation(
+def recommendation(
     username: str,
 ) -> Dict[str, str]:
     """
@@ -145,8 +146,10 @@ def response(request):
     @return: the response to the user's input in a dictionary format.
     """
     body = json.loads(request.body)
-    user_name = body["username"]
+    user_name = request.user.username
     user_input = body["userinput"]
+    print("[DEBUG] response function: ", user_name) #DEBUG
+    agent_manager.show_current_state(user_name) #DEBUG
     agent = agent_manager.get_frontend_agent(user_name)
     if agent is None:
         return JsonResponse({"front end response": None, "back end response": None})
@@ -212,10 +215,19 @@ def signup(request):
     username = body["username"]
     password = body["password"]
     email = body["email"]
-    user = User.objects.create_user(
-        username=username, email=email, password=password)
-    user.save()
-
+    try:
+        user = User.objects.create_user(
+            username=username, email=email, password=password)
+        user.save()
+    except IntegrityError:
+        # try loging in the user
+        user = authenticate(username=username, password=password)
+        if user is not None:
+            login(request, user)
+            return JsonResponse({"message": "User already exists. Log in successful.", "success": True})
+        else:
+            return JsonResponse({"message": "User already exists. Log in failed.", "success": False})
+        
     # TODO? : Really need to add frontend agent and backend agent here
     # if we have already added frontend agent and backend agent in on_user_logged_in?
     # disable for now
@@ -228,7 +240,8 @@ def signup(request):
     user = authenticate(username=username, password=password)
     if user is not None:
         login(request, user)
-        # User is logged in successfully
+        print("User signed up and logged in: ", user)
+        # User is logged in successfcully
         return JsonResponse({"message": "Sign up successful.", "success": True})
     else:
         # Authentication failed
@@ -238,10 +251,13 @@ def signup(request):
 @csrf_exempt
 @receiver(user_logged_in)
 # TODO! new argument: username
-def on_user_logged_in(sender, request, user: User, username: str, **kwargs):
+def on_user_logged_in(sender, request, **kwargs):
     """
     Log the user's chat history in the database when the user logs in.
     """
-    # print("User logged in: ", user) #DEBUG
+    user = request.user
+    username = user.username
     agent_manager.add_frontend_agent(username, user)
     agent_manager.add_backend_agent(username, user)
+    print("User logged in: ", user)
+    agent_manager.show_current_state(user)
