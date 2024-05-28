@@ -1,0 +1,15 @@
+# ignore all __pycache__
+**/__pycache__/
+# ignore all .DS_Store files
+**/.DS_Store
+# ignore all .idea files
+.idea/
+# ignore all .git files
+.git/
+# ignore all .vscode files
+.vscode/
+# ignore all .pytest_cache files
+**/.pytest_cache/
+# ignore all .mypy_cache files
+**/.mypy_cache/
+
