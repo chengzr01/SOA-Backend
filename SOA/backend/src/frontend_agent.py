@@ -22,6 +22,7 @@ class FrontendAgent:
         self,
         api_key : str = ZHIPU_API_KEY,
         keywords : Optional[List[str]] = DEFAULT_KEYWORDS, 
+        optinal_keywords : Optional[List[str]] = OPTIONAL_KEYWORDS,
         opening : str = DEFAULT_OPENING,
         streaming_on : bool = False,
         user_profile : Optional[Dict[str, str]] = None,
@@ -48,15 +49,19 @@ class FrontendAgent:
         
         # key information that the users need to provide
         self.keywords = keywords
+        self.optional_keywords = optinal_keywords
         self._initialize_key_information()
+        
+        self.summary = "" # a summary of the chatting history
         
     def switch_user(self, user: User):
         self.user = user
         print('Switching user to:', user) # DEBUG
         self._switch_history()
+        self._update_summary()
     
     def _initialize_key_information(self) -> Dict[str, str]:
-        self.key_information = {key : None for key in self.keywords}
+        self.key_information = {key : None for key in self.keywords} + {key : None for key in self.optional_keywords}
         
         if self.user_profile is not None:
             for key, value in self.user_profile.items():
@@ -113,8 +118,9 @@ class FrontendAgent:
         self._process_input(user_input)
         
         # check if key information is complete
+        # only key information is require, the optional information is not required
         for key, value in self.key_information.items():
-            if value is None:
+            if key in self.keywords and value is None:
                 return False
         return True
     
@@ -136,7 +142,7 @@ class FrontendAgent:
         
         # update key information
         for key, value in response_dict.items():
-            if key in self.key_information:
+            if (key in self.key_information):
                 self.key_information[key] = value
         
         return response_dict
@@ -244,7 +250,37 @@ class FrontendAgent:
         )
         # save the chat history to the database
         messsage_object.save()
-        
+
+    def _update_summary(self, user_chat_history):
+        """
+        Update the summary of the chat history.
+        """
+        if len(user_chat_history) > 0:
+            summary = ""
+            all_key_words = self.keywords + self.optional_keywords
+            all_key_words = ", ".join(all_key_words)
+            for message in user_chat_history:
+                role = "user" if message.is_user_message else "assistant"
+                content = message.message
+                summary += f"[{role}]: {content}\n"
+            prompt = f"Below is a conversation between a user and an AI assistant. \
+    Please read through the entire chat history and provide a concise summary of the key points and main topics \
+    discussed by the user. Your summary should focus on the most important details and provide a clear and comprehensive overview of the user's input. if there are informations regarding {all_key_words}, please include them in your summary.\
+    Here is the chat history:\n"
+            prompt += summary
+            prompt += "The summary:"
+            print(f'Updating summary:{prompt}') # DEBUG
+            response = self.client.chat.completions.create(
+                    model = "glm-4",
+                    messages = [
+                        {"role": "user", "content": prompt}
+                    ] + self.chat_history,
+                    # TODO: Streaming output
+                )
+            response_text = response.choices[0].message.content 
+            self.summary = response_text
+        else:
+            return
 
     def _switch_history(self):
         """
@@ -255,11 +291,14 @@ class FrontendAgent:
         user_chat_history = ChatMessage.objects.filter(
             models.Q(sender = self.user) | models.Q(receiver = self.user)
         ).order_by('id')
-
+        self._update_summary(user_chat_history) # update summary
         # Convert chat history to the format used by FrontendAgent
         self.chat_history = []
         # first append the opening sentence
-        self.append_agent_output(DEFAULT_OPENING)
+        if self.summary == "":
+            self.append_agent_output(DEFAULT_OPENING)
+        else:
+            self.append_agent_output(self.summary)
         
         for message in user_chat_history:
             sender_role = "user" if message.is_user_message else "assistant"
@@ -270,8 +309,4 @@ class FrontendAgent:
             
         # DEBUG
         print(self.chat_history)
-            
-            
-
-# class BackEndAgent():
-#     pass
+     
