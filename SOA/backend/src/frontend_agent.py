@@ -19,7 +19,7 @@ class FrontendAgent:
     print(response)
     """
     def __init__(
-        self, 
+        self,
         api_key : str = ZHIPU_API_KEY,
         keywords : Optional[List[str]] = DEFAULT_KEYWORDS, 
         opening : str = DEFAULT_OPENING,
@@ -52,7 +52,7 @@ class FrontendAgent:
         
     def switch_user(self, user: User):
         self.user = user
-        print('Switching user to:', user)
+        print('Switching user to:', user) # DEBUG
         self._switch_history()
     
     def _initialize_key_information(self) -> Dict[str, str]:
@@ -273,5 +273,5 @@ class FrontendAgent:
             
             
 
-class BackEndAgent():
-    pass
+# class BackEndAgent():
+#     pass

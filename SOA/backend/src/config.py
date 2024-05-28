@@ -5,5 +5,14 @@ DEFAULT_OPENING = "Hello, what job opportunities are you looking for today?"
 # TODO: add default keywords according to database column index name
 DEFAULT_KEYWORDS = [
     "company name", "job title",
-    # "industry", "salary", "location", "job description",
+]
+
+OPTIONAL_KEYWORDS = [
+    "level", "corporate", "requirements",
+]
+
+DEFAULT_MOODS = [
+    "Friendly and Approachable",
+    "Professional and Formal",
+    "Humorous and Entertaining"
 ]

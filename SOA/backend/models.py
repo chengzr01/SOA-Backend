@@ -31,5 +31,9 @@ class ChatMessage(models.Model):
 
 
 class UserProfile(models.Model):
-    pass
-    # TODO: Add fields for user profile
+    username = models.CharField(max_length=100, unique=True) #unique=True
+    location = models.TextField(blank=True, null=True)
+    job_title = models.CharField(max_length=100,blank=True, null=True)
+    level = models.TextField(blank=True, null=True)
+    corporate = models.TextField()
+    requirements = models.TextField(blank=True, null=True)
