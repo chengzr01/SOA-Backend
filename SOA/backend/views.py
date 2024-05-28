@@ -10,28 +10,71 @@ from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.signals import user_logged_in, user_logged_out
 from django.dispatch import receiver
+from django.db.models import Q
 
 agent_manager = AgentManager()
 
 
 @csrf_exempt
-def search(user_request: Dict[str, str]):
+def search(user_request: Dict[str, str], username: str):
     '''
     Search for jobs based on the user's request.
     @param user_request: the user's request in a dictionary format.
     @return: the response to the user's request in a dictionary format.
     '''
     print(user_request)
+
+    # only company name and job title are mandatory
     company = user_request["company name"]
     job_title = user_request["job title"]
+
+    try:
+        level = user_request["level"]
+    except KeyError:
+        level = None
+    try:
+        location = user_request["location"]
+    except KeyError:
+        location = None
+    try:
+        requirements = user_request["requirements"]
+        try:
+            requirements = json.loads(requirements)  # convert string to list
+        except json.JSONDecodeError:
+            requirements = None
+    except KeyError:
+        requirements = None
+
     response = []
 
     # TODO: update search query in backend agent
     backend_agent = agent_manager.get_backend_agent(username)
     backend_agent.update_user_profile(user_request)
 
-    jobs = Job.objects.filter(
-        corporate__iexact=company, job_title__icontains=job_title)
+    # Building the query
+    query = Q()
+    if company:
+        query &= Q(corporate__iexact=company)
+    if job_title:
+        query &= Q(job_title__icontains=job_title)
+    if level:
+        query &= Q(level__iexact=level)
+    if location:
+        query &= Q(location__icontains=location)
+
+    jobs = Job.objects.filter(query)
+
+    # filter jobs based on requirements
+    if requirements:
+        def requirements_match(job_requirements: str, search_requirements: List[str]) -> bool:
+            try:
+                job_requirements_list = json.loads(job_requirements)
+                return all(req in job_requirements_list for req in search_requirements)
+            except json.JSONDecodeError:
+                return False
+
+        jobs = [job for job in jobs if requirements_match(
+            job.requirements, requirements)]
 
     # Iterate over the queryset and serialize the results
     for job in jobs:
@@ -66,7 +109,7 @@ def get_response(
     if complete:
         query = agent.query_backend()
         # {"company": "Google", "job_title": "software engineering"}
-        res = search(query)
+        res = search(query, username)
         # [{"company": "Google", "job_title": "software engineering"}, {"company": "Facebook", "job_title": "data scientist"}]
         # one and only one of the front end response and back end response should be None
         return {"front end response": None, "back end response": res}
@@ -88,7 +131,7 @@ def get_recommendation(
         return {"front end response": None, "back end response": None}
 
     query = agent.query_backend()
-    res = search(query)
+    res = search(query, username)
     return {"front end response": None, "back end response": res}
 
 
@@ -194,15 +237,3 @@ def on_user_logged_in(sender, request, user: User, username: str, **kwargs):
     # print("User logged in: ", user) #DEBUG
     agent_manager.add_frontend_agent(username, user)
     agent_manager.add_backend_agent(username, user)
-
-
-@csrf_exempt
-@receiver(user_logged_out)
-# TODO! new argument: username
-def on_user_logged_out(sender, request, username: str, **kwargs):
-    """
-    Log the user's chat history in the database when the user logs out.
-    """
-    # print("User logged out: ", user) #DEBUG
-    agent_manager.remove_frontend_agent(username)
-    agent_manager.remove_backend_agent(username)
