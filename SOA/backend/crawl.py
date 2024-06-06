@@ -6,7 +6,7 @@ from backend.models import Job
 this function will be called by the main function
 it will take the url as an argument
 '''
-def entry(url):
+def entry(url, start_page = 1, end_page = None):
     # if url is metacareers.com/jobs/
     if url == 'metacareers.com/jobs/':
         pass
@@ -14,16 +14,15 @@ def entry(url):
         return googlecareers(url)
 
 
-def googlecareers(url, save = True, db_name = "google.db"):
+def googlecareers(url, save = True, start_page = 1, end_page = None):
     # URL of the website to scrape
     base_url = "https://www.google.com/about/careers/applications/jobs/results/"
     has_next_page = True
-    page_number = 1
+    page_number = start_page
     num_records_inserted = 0
     while has_next_page:
-        if page_number <= 117:
-            page_number += 1
-            continue
+        if page_number > end_page:
+            break
         print("-" * 20, "Scraping page ", page_number, "-" * 20)
         url = base_url + f"?page={page_number}"
         response = requests.get(url, verify=False)
@@ -97,7 +96,7 @@ def googlecareers(url, save = True, db_name = "google.db"):
     #     # Close the connection to the database after crawling
     #     conn.close()
         
-entry("https://www.google.com/about/careers/applications/jobs/results/")
+# entry("https://www.google.com/about/careers/applications/jobs/results/")
 # test case
 # job = Job(location="Mountain View, CA, USA", job_title="Software Engineer", level="Entry level", corporate="Google", requirements=json.dumps(["BS in Computer Science or equivalent", "Experience in software development", "Experience with Python, Java, or C++"]))
 # job.save()
