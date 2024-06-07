@@ -145,9 +145,9 @@ def response(request):
     @return: the response to the user's input in a dictionary format.
     """
     body = json.loads(request.body)
-    user_name = request.user.username
+    user_name = body["username"]
     user_input = body["userinput"]
-    print("[DEBUG] response function: ", user_name) #DEBUG
+    print("[DEBUG] response function: ", user_name)  # DEBUG
     assert user_input is not None, "user_input is None"
     # Return the response as a JSON object
     return JsonResponse(get_response(user_input, user_name))
@@ -221,7 +221,7 @@ def signup(request):
             return JsonResponse({"message": "User already exists. Log in successful.", "success": True})
         else:
             return JsonResponse({"message": "User already exists. Log in failed.", "success": False})
-        
+
     # TODO? : Really need to add frontend agent and backend agent here
     # if we have already added frontend agent and backend agent in on_user_logged_in?
     # disable for now
