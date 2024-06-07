@@ -21,7 +21,7 @@ def googlecareers(url, save = True, start_page = 1, end_page = None):
     page_number = start_page
     num_records_inserted = 0
     while has_next_page:
-        if page_number > end_page:
+        if (end_page is not None) and (page_number > end_page):
             break
         print("-" * 20, "Scraping page ", page_number, "-" * 20)
         url = base_url + f"?page={page_number}"
@@ -96,7 +96,7 @@ def googlecareers(url, save = True, start_page = 1, end_page = None):
     #     # Close the connection to the database after crawling
     #     conn.close()
         
-# entry("https://www.google.com/about/careers/applications/jobs/results/")
+
 # test case
 # job = Job(location="Mountain View, CA, USA", job_title="Software Engineer", level="Entry level", corporate="Google", requirements=json.dumps(["BS in Computer Science or equivalent", "Experience in software development", "Experience with Python, Java, or C++"]))
 # job.save()
