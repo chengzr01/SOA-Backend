@@ -213,8 +213,7 @@ def signup(request):
         user = User.objects.create_user(
             username=username, email=email, password=password)
         user.save()
-    except IntegrityError:
-        # try loging in the user
+    except:
         user = authenticate(username=username, password=password)
         if user is not None:
             login(request, user)
@@ -240,6 +239,33 @@ def signup(request):
     else:
         # Authentication failed
         return JsonResponse({"message": "Failed to log in after sign up.", "success": False})
+
+@csrf_exempt
+def costumed_login(request):
+    """
+    Log in a user.
+    @return: a JSON response.
+    """
+    body = json.loads(request.body)
+    username = body["username"]
+    password = body["password"]
+    user = authenticate(username=username, password=password)
+    if user is not None:
+        login(request, user)
+        print("User logged in: ", user)
+        return JsonResponse({"message": "Log in successful.", "success": True})
+    else:
+        return JsonResponse({"message": "Log in failed.", "success": False})
+    
+@csrf_exempt
+def logout(request):
+    """
+    Log out a user.
+    @return: a JSON response.
+    """
+    user = request.user
+    print("User logged out: ", user)
+    return JsonResponse({"message": "Log out successful.", "success": True})
 
 
 @csrf_exempt
