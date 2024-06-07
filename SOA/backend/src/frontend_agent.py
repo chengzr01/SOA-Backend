@@ -58,10 +58,10 @@ class FrontendAgent:
         self.user = user
         print('Switching user to:', user) # DEBUG
         self._switch_history()
-        self._update_summary()
-    
+
     def _initialize_key_information(self) -> Dict[str, str]:
-        self.key_information = {key : None for key in self.keywords} + {key : None for key in self.optional_keywords}
+        # combine the keywords and optional keywords
+        self.key_information = {key: None for key in self.keywords + self.optional_keywords}
         
         if self.user_profile is not None:
             for key, value in self.user_profile.items():

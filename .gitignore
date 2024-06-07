@@ -12,4 +12,7 @@
 **/.pytest_cache/
 # ignore all .mypy_cache files
 **/.mypy_cache/
-
+# ignore .sqlite3 files
+*.sqlite3
+# ignore .pyc files
+**.pyc
