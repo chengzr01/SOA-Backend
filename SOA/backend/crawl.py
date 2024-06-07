@@ -21,7 +21,7 @@ def googlecareers(url, save = True, start_page = 1, end_page = None):
     page_number = start_page
     num_records_inserted = 0
     while has_next_page:
-        if page_number > end_page:
+        if (end_page is not None) and (page_number > end_page):
             break
         print("-" * 20, "Scraping page ", page_number, "-" * 20)
         url = base_url + f"?page={page_number}"
