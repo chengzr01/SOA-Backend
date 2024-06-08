@@ -157,11 +157,13 @@ def recommendation(
 @ csrf_exempt
 @ login_required
 # TODO! new argument: username
-def flush(request, username: str):
+def flush(request):
     """
     Flush the chat history and key information.
     @return: a JSON response.
     """
+    body = json.loads(request.body)
+    username = body["username"]
     agent = agent_manager.get_frontend_agent(username)
     if agent is None:
         return JsonResponse({"message": "Agent not found.", "success": False})
@@ -172,16 +174,81 @@ def flush(request, username: str):
 
 @ csrf_exempt
 # TODO! new argument: username
-def reset(request, username: str):
+def reset(request):
     '''
     delete every chat history and key information
     et '''
+    body = json.loads(request.body)
+    username = body["username"]
     agent = agent_manager.get_frontend_agent(username)
     if agent is None:
         return JsonResponse({"message": "Agent not found.", "success": False})
 
     agent.reset()
     return JsonResponse({"message": "All chat history and key information have been reset.", "success": True})
+
+
+@csrf_exempt
+def summarize(request):
+    body = json.loads(request.body)
+    username = body["username"]
+    jobs = body["jobs"]
+    agent = agent_manager.get_frontend_agent(username)
+    if agent is None:
+        return JsonResponse({"message": "Agent not found.", "success": False})
+    else:
+        summarization = agent.summarize(jobs)
+        return JsonResponse({"message": summarization, "success": True})
+
+
+@csrf_exempt
+def analyze(request):
+    body = json.loads(request.body)
+    username = body["username"]
+    jobs = body["jobs"]
+    agent = agent_manager.get_frontend_agent(username)
+    if agent is None:
+        return JsonResponse({"message": "Agent not found.", "success": False})
+    else:
+        analysis = agent.analyze(jobs)
+        return JsonResponse({"message": analysis, "success": True})
+
+
+@csrf_exempt
+def visualize(request):
+    body = json.loads(request.body)
+    username = body["username"]
+    jobs = body["jobs"]
+    agent = agent_manager.get_frontend_agent(username)
+    if agent is None:
+        return JsonResponse({"message": "Agent not found.", "success": False})
+    else:
+        visualization = agent.visualize(jobs)
+        return JsonResponse({"message": visualization, "success": True})
+
+
+@csrf_exempt
+def update_description(request):
+    body = json.loads(request.body)
+    username = body["username"]
+    descriptipn = body["description"]
+    agent = agent_manager.get_frontend_agent(username)
+    if agent is None:
+        return JsonResponse({"message": "Agent not found.", "success": False})
+    else:
+        update_result = agent.update_description(descriptipn)
+        return JsonResponse({"message": descriptipn, "success": update_result})
+
+
+@csrf_exempt
+def get_description(request):
+    body = json.loads(request.body)
+    username = body["username"]
+    agent = agent_manager.get_frontend_agent(username)
+    if agent is None:
+        return JsonResponse({"message": "Agent not found.", "success": False})
+    else:
+        return JsonResponse({"message": agent.description, "success": True})
 
 
 @ csrf_exempt

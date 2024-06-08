@@ -48,9 +48,6 @@ class FrontendAgent:
         self.user_profile = user_profile
 
         # key information that the users need to provide
-        print("@" * 10)
-        print("[__INIT__ (FRONTEND AGENT)] keywords", keywords)
-        print("[__INIT__ (FRONTEND AGENT)] optional_keywords", optinal_keywords)
         self.keywords = keywords
         self.optional_keywords = optinal_keywords
         self._initialize_key_information()
@@ -78,7 +75,11 @@ class FrontendAgent:
         Deleting from the dataset and cache 
         """
         self.__reset_chat_history_for_user()
-        self._initialize_key_information()
+
+        self.key_information = {
+            key: None for key in self.keywords + self.optional_keywords}
+        self.user_profile = {
+            key: None for key in self.keywords + self.optional_keywords}
         return True
 
     def reset(self) -> bool:
@@ -134,24 +135,24 @@ class FrontendAgent:
 
         print("%" * 10)
         print("[_PROCESS_INPUT] system_message", system_message)
+        print("[_PROCESS_INPUT] user_input", user_input)
 
         response = self.client.chat.completions.create(
             model="glm-3-turbo",
             messages=[
-                {"role": "system", "content": system_message}
-            ] + self.chat_history,
-            # messages = self.chat_history,
+                {"role": "system", "content": system_message},
+                {"role": "user", "content": user_input}
+            ],
         )
-        # parse the response to extract key information
         response_text = response.choices[0].message.content
 
         print("%" * 10)
-        print("[_PROCESS_INPUT] response_text", response_text)
+        print("[_PROCESS_INPUT] response_text:", response_text)
 
         response_dict = self._parse_string_to_dictionary(response_text)
 
         print("%" * 10)
-        print("[_PROCESS_INPUT] response_dict", response_dict)
+        print("[_PROCESS_INPUT] response_dict:", response_dict)
 
         # update key information
         for key, value in response_dict.items():
@@ -170,13 +171,13 @@ class FrontendAgent:
                     system_message += f" {key},"
             system_message = system_message[:-1] + "."
 
-            system_message += "\n###\n"
-            system_message += "\nThe results should be displayed in the following format:\n"
+            system_message += "###\n"
+            system_message += "The results should be displayed in the following format:\n"
             system_message += "{"
             for key, value in self.key_information.items():
                 system_message += f"{key}: value, "
             system_message = system_message[:-2] + "}"
-            system_message += "\n###\n"
+            system_message += "###\n"
 
             system_message += "\nIf an information is missing, the value should be 'None'."
             system_message += "\nDo not repeat the question. Only return the output dictionary."
