@@ -53,6 +53,7 @@ class FrontendAgent:
         self._initialize_key_information()
 
         self.summary = ""  # a summary of the chatting history
+        self.description = ""
 
     def switch_user(self, user: User):
         self.user = user
@@ -326,3 +327,25 @@ class FrontendAgent:
 
         # DEBUG
         print(self.chat_history)
+
+    def summarize(self, jobs: List[Dict[str, str]]) -> str:
+        summarization = ""
+        return summarization
+
+    def analyze(self, jobs: List[Dict[str, str]]) -> str:
+        analysis = ""
+        return analysis
+
+    def visualize(self, jobs: List[Dict[str, str]]) -> str:
+        visualization = ""
+        return visualization
+
+    def get_description(self) -> str:
+        return self.description
+
+    def update_description(self, description: str) -> bool:
+        try:
+            self.description = description
+            return True
+        except:
+            return False
