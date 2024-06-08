@@ -24,7 +24,6 @@ class FrontendAgent:
         api_key: str = ZHIPU_API_KEY,
         keywords: Optional[List[str]] = DEFAULT_KEYWORDS,
         optinal_keywords: Optional[List[str]] = OPTIONAL_KEYWORDS,
-        opening: str = DEFAULT_OPENING,
         streaming_on: bool = False,
         user_profile: Optional[Dict[str, str]] = None,
     ):
@@ -49,6 +48,9 @@ class FrontendAgent:
         self.user_profile = user_profile
 
         # key information that the users need to provide
+        print("@" * 10)
+        print("[__INIT__ (FRONTEND AGENT)] keywords", keywords)
+        print("[__INIT__ (FRONTEND AGENT)] optional_keywords", optinal_keywords)
         self.keywords = keywords
         self.optional_keywords = optinal_keywords
         self._initialize_key_information()
@@ -122,7 +124,6 @@ class FrontendAgent:
         # only key information is require, the optional information is not required
         for key, value in self.key_information.items():
             if key in self.keywords and value is None:
-                print("------", key)
                 return False
         return True
 
@@ -130,6 +131,10 @@ class FrontendAgent:
         system_message = self._generate_system_message('user input process')
         self._append_user_input(user_input)
         self._store_chat_message({"role": "user", "content": user_input})
+
+        print("%" * 10)
+        print("[_PROCESS_INPUT] system_message", system_message)
+
         response = self.client.chat.completions.create(
             model="glm-3-turbo",
             messages=[
@@ -139,9 +144,14 @@ class FrontendAgent:
         )
         # parse the response to extract key information
         response_text = response.choices[0].message.content
-        print(response_text)
+
+        print("%" * 10)
+        print("[_PROCESS_INPUT] response_text", response_text)
+
         response_dict = self._parse_string_to_dictionary(response_text)
-        print(response_dict)
+
+        print("%" * 10)
+        print("[_PROCESS_INPUT] response_dict", response_dict)
 
         # update key information
         for key, value in response_dict.items():
@@ -160,14 +170,20 @@ class FrontendAgent:
                     system_message += f" {key},"
             system_message = system_message[:-1] + "."
 
+            system_message += "\n###\n"
             system_message += "\nThe results should be displayed in the following format:\n"
             system_message += "{"
             for key, value in self.key_information.items():
-                system_message += f"{key}: xxx, "
+                system_message += f"{key}: value, "
             system_message = system_message[:-2] + "}"
+            system_message += "\n###\n"
 
-            system_message += "\nIf an information is missing, xxx should be 'None'."
+            system_message += "\nIf an information is missing, the value should be 'None'."
             system_message += "\nDo not repeat the question. Only return the output dictionary."
+
+            system_message += "\n###\n"
+            system_message += "Example:\nInput: Research Scientist at Amazon.\nOutput: {company name: Amazon, job title: Research Scientist, level: None, corporate: None, requirements: None, location: None}"
+            system_message += "\n###\n"
 
             return system_message
 
@@ -219,16 +235,16 @@ class FrontendAgent:
             return {"frontend response": response_text, "backend response": None}
 
     def query_backend(self) -> Dict[str, str]:
+        print("-" * 10)
+        print("[QUERY BACKEND] key_information", self.key_information)
         return self.key_information
 
     def _append_user_input(self, user_input: str):
         self.chat_history.append({"role": "user", "content": user_input})
-        # self._store_chat_message( {"role": "user", "content": user_input})
 
     def append_agent_output(self, agent_output: str):
         self.chat_history.append(
             {"role": "assistant", "content": agent_output})
-        # self._store_chat_message({"role": "assistant", "content": agent_output})
 
     def clear_history(self, size=0) -> bool:
         self.chat_history = self.chat_history[:size]

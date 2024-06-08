@@ -8,7 +8,7 @@ DEFAULT_KEYWORDS = [
 ]
 
 OPTIONAL_KEYWORDS = [
-    "level", "corporate", "requirements",
+    "level", "corporate", "requirements", "location"
 ]
 
 DEFAULT_MOODS = [

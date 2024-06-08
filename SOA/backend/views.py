@@ -23,7 +23,8 @@ def search(user_request: Dict[str, str], username: str):
     @param user_request: the user's request in a dictionary format.
     @return: the response to the user's request in a dictionary format.
     '''
-    print(user_request)
+    print("*" * 10)
+    print("[SEARCH] user_request:", user_request)
 
     # only company name and job title are mandatory
     company = user_request["company name"]
@@ -33,22 +34,24 @@ def search(user_request: Dict[str, str], username: str):
         level = user_request["level"]
     except KeyError:
         level = None
+
     try:
         location = user_request["location"]
     except KeyError:
         location = None
+
     try:
         requirements = user_request["requirements"]
         try:
             requirements = json.loads(requirements)  # convert string to list
         except:
             requirements = None
+
     except KeyError:
         requirements = None
 
     response = []
 
-    # TODO: update search query in backend agent
     backend_agent = agent_manager.get_backend_agent(username)
     backend_agent.update_user_profile(user_request)
 
@@ -103,17 +106,23 @@ def get_response(
     """
     agent = agent_manager.get_frontend_agent(username)
     if agent is None:
-        return {"front end response": None, "back end response": None}
+        return {"frontend response": None, "backend response": None}
 
     complete = agent.check_key_info_completeness(user_input)
-    print(complete)
+    print("*" * 10)
+    print("[GET RESPONSE] complete: ", complete)
+
     if complete:
         query = agent.query_backend()
+        print("*" * 10)
+        print("[GET RESPONSE] query: ", query)
         # {"company": "Google", "job_title": "software engineering"}
         res = search(query, username)
+        print("*" * 10)
+        print("[GET RESPONSE] res: ", res)
         # [{"company": "Google", "job_title": "software engineering"}, {"company": "Facebook", "job_title": "data scientist"}]
         # one and only one of the front end response and back end response should be None
-        return {"front end response": None, "back end response": res}
+        return {"frontend response": None, "backend response": res}
     else:
         response = agent.respond_frontend(user_input)
         return response
@@ -148,7 +157,6 @@ def response(request):
     body = json.loads(request.body)
     user_name = body["username"]
     user_input = body["userinput"]
-    assert user_input is not None, "user_input is None"
     # Return the response as a JSON object
     return JsonResponse(get_response(user_input, user_name))
 

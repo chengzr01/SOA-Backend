@@ -22,8 +22,11 @@ class BackendAgent:
             for key, value in user_profile.items():
                 if ((key in keywords) or (key in optional_keywords)) and value is not None:
                     self.user_profile[key] = value
-
+        print("*" * 10)
+        print(keywords)
         self.keywords = keywords
+        print("*" * 10)
+        print(optional_keywords)
         self.optional_keywords = optional_keywords
 
     def query_backend(self) -> Dict[str, str]:
@@ -36,9 +39,8 @@ class BackendAgent:
         self.save_user_profile()
 
     def save_user_profile(self) -> None:
-        username = self.user.username
         userProfile = UserProfile.objects.create(
-            username=self.username,
+            username=self.user.username,
             location=self.user_profile["location"],
             job_title=self.user_profile["job title"],
             level=self.user_profile["level"],
