@@ -190,7 +190,11 @@ class FrontendAgent:
             return system_message
 
         elif mode == 'asking for more information':
-            system_message = "Ask the user to provide more information about the following:"
+            if self.description != "":
+                system_message = "Here is a personal description of the user: " + self.description + \
+                    "\nAsk the user to provide more information about the following based on the personal description:\n"
+            else:
+                system_message = "Ask the user to provide more information about the following:\n"
             for key, value in self.key_information.items():
                 if value is None:
                     system_message += f" {key},"
@@ -331,8 +335,9 @@ class FrontendAgent:
     def summarize(self, jobs: List[Dict[str, str]]) -> str:
         jobs_serialize = "\n".join([
             ", ".join(f"{key}: {value}" for key, value in job.items()) for job in jobs])
+        print(jobs_serialize)
         prompt = (
-            "Generate a paragraph to summarize the list of job information. Include perspectives such as job characteristics, company characteristics, location characteristics, and requirement characteristics. Compare the advantages and disadvantages of these jobs with each other.\n"
+            "Generate a paragraph to summarize the list of job information. Compare the advantages and disadvantages of these jobs with each other. You can summarize the location, job title, requirement, and company information from different perspectives.\n"
             "Job information:\n{jobs_serialize}"
         )
         prompt = prompt.format_map({"jobs_serialize": jobs_serialize})
@@ -368,8 +373,13 @@ class FrontendAgent:
         jobs_serialize = "\n".join([
             ", ".join(f"{key}: {value}" for key, value in job.items()) for job in jobs])
         prompt = (
-            "Generate some html code to visualize the job information with bar charts. You can visualization the location, company or title of all the jobs. Start the code with <div> and end the code with </div>\n"
+            "Generate some html code to visualize the job information with bar charts. You can visualization the location, company or title of all the jobs. Just focus on one dimension. Do not use any external packages. Start the code with <div> and end the code with </div>\n"
             "Job information:\n{jobs_serialize}\n"
+            "###\nExample:\n"
+            "<div style=\"display: flex; align-items: flex-end; height: 300px; width: 500px; border: 1px solid #ddd; padding: 10px;\">"
+            "    <div style=\"width: 50px; margin: 0 5px; background-color: #4CAF50; text-align: center; color: white; height: 100px;\">10</div>"
+            "</div>"
+            "###\n"
         )
         prompt = prompt.format_map(
             {"jobs_serialize": jobs_serialize})
