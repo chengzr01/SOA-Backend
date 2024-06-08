@@ -39,16 +39,16 @@ class BackendAgent:
         self.save_user_profile()
 
     def save_user_profile(self) -> None:
-        userProfile = UserProfile.objects.create(
+        userProfile, created = UserProfile.objects.update_or_create(
             username=self.user.username,
-            location=self.user_profile["location"],
-            job_title=self.user_profile["job title"],
-            level=self.user_profile["level"],
-            corporate=self.user_profile["company name"],
-            requirements=self.user_profile["requirements"]
+            defaults={
+                "location": self.user_profile["location"],
+                "job_title": self.user_profile["job title"],
+                "level": self.user_profile["level"],
+                "corporate": self.user_profile["company name"],
+                "requirements": self.user_profile["requirements"]
+            }
         )
-        # save to database
-        userProfile.save()
 
     def switch_user(self, user: User):
         self.user = user

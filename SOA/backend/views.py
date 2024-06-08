@@ -53,6 +53,7 @@ def search(user_request: Dict[str, str], username: str):
     response = []
 
     backend_agent = agent_manager.get_backend_agent(username)
+
     backend_agent.update_user_profile(user_request)
 
     # Building the query
