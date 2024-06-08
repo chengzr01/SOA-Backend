@@ -17,19 +17,21 @@ class BackendAgent:
         only mandatory keywords are required to be in user_profile
         '''
         self.user = None
-        self.user_profile = {keyword: None for keyword in keywords}
+        self.user_profile = {}
+        for key in keywords:
+            self.user_profile[key] = None
+        for key in optional_keywords:
+            self.user_profile[key] = None
         if user_profile is not None:
             for key, value in user_profile.items():
                 if ((key in keywords) or (key in optional_keywords)) and value is not None:
                     self.user_profile[key] = value
-        print("*" * 10)
-        print(keywords)
         self.keywords = keywords
-        print("*" * 10)
-        print(optional_keywords)
         self.optional_keywords = optional_keywords
 
     def query_backend(self) -> Dict[str, str]:
+        print("^" * 10)
+        print("[QUERY BACKEND]", self.user_profile)
         return self.user_profile
 
     def update_user_profile(self, user_profile: Dict[str, str]) -> None:

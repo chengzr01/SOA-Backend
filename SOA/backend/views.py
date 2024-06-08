@@ -97,19 +97,23 @@ def search(user_request: Dict[str, str], username: str):
 
 @csrf_exempt
 # TODO! new argument: username
-def get_response(
-    user_input: str,
-    username: str
+def response(
+    request
 ) -> Dict[str, str]:
     """
     Respond to user's input.
     @return: the response to the user's input in a dictionary format.
     """
+    body = json.loads(request.body)
+    username = body["username"]
+    user_input = body["userinput"]
+
     agent = agent_manager.get_frontend_agent(username)
     if agent is None:
-        return {"frontend response": None, "backend response": None}
+        return JsonResponse({"frontend response": None, "backend response": None})
 
     complete = agent.check_key_info_completeness(user_input)
+
     print("*" * 10)
     print("[GET RESPONSE] complete: ", complete)
 
@@ -123,63 +127,34 @@ def get_response(
         print("[GET RESPONSE] res: ", res)
         # [{"company": "Google", "job_title": "software engineering"}, {"company": "Facebook", "job_title": "data scientist"}]
         # one and only one of the front end response and back end response should be None
-        return {"frontend response": None, "backend response": res}
+        return JsonResponse({"frontend response": None, "backend response": res})
     else:
-        response = agent.respond_frontend(user_input)
-        return response
+        return JsonResponse(agent.respond_frontend(user_input))
 
 
 @csrf_exempt
 def recommendation(
-    username: str,
+    request
 ) -> Dict[str, str]:
     """
     Get a recommendation for the user.
     @return: the recommendation in a dictionary format.
     """
+    print("*" * 10)
+    body = json.loads(request.body)
+    username = body["username"]
+    print("[RECOMMENDATION]", username)
     agent = agent_manager.get_backend_agent(username)
     if agent is None:
-        return {"front end response": None, "back end response": None}
+        return JsonResponse({"frontend response": None, "backend response": None})
 
     query = agent.query_backend()
     res = search(query, username)
-    return {"front end response": None, "back end response": res}
+    return JsonResponse({"frontend response": None, "backend response": res})
 
 
-@csrf_exempt
-# @login_required
-# TODO! new argument: username
-def response(request):
-    """
-    Respond to user's input.
-    Request is a POST request with the user's input in the body.
-    @return: the response to the user's input in a dictionary format.
-    """
-    body = json.loads(request.body)
-    user_name = body["username"]
-    user_input = body["userinput"]
-    # Return the response as a JSON object
-    return JsonResponse(get_response(user_input, user_name))
-
-
-@csrf_exempt
-def recommendation(request):
-    body = json.loads(request.body)
-    user_name = body["username"]
-    return JsonResponse(get_recommendation(username=user_name))
-
-
-@csrf_exempt
-def index(request):
-    """
-    Render the index page.
-    @return: the index page.
-    """
-    return render(request, 'index.html')  # TODO
-
-
-@csrf_exempt
-@login_required
+@ csrf_exempt
+@ login_required
 # TODO! new argument: username
 def flush(request, username: str):
     """
@@ -194,7 +169,7 @@ def flush(request, username: str):
     return JsonResponse({"message": "Chat history and key information regarding the user have been flushed.", "success": True})
 
 
-@csrf_exempt
+@ csrf_exempt
 # TODO! new argument: username
 def reset(request, username: str):
     '''
@@ -208,7 +183,7 @@ def reset(request, username: str):
     return JsonResponse({"message": "All chat history and key information have been reset.", "success": True})
 
 
-@csrf_exempt
+@ csrf_exempt
 def signup(request):
     """
     Sign up a new user.
@@ -250,7 +225,7 @@ def signup(request):
         return JsonResponse({"message": "Failed to log in after sign up.", "success": False})
 
 
-@csrf_exempt
+@ csrf_exempt
 def costumed_login(request):
     """
     Log in a user.
@@ -268,7 +243,7 @@ def costumed_login(request):
         return JsonResponse({"message": "Log in failed.", "success": False})
 
 
-@csrf_exempt
+@ csrf_exempt
 def logout(request):
     """
     Log out a user.
@@ -279,8 +254,8 @@ def logout(request):
     return JsonResponse({"message": "Log out successful.", "success": True})
 
 
-@csrf_exempt
-@receiver(user_logged_in)
+@ csrf_exempt
+@ receiver(user_logged_in)
 # TODO! new argument: username
 def on_user_logged_in(sender, request, **kwargs):
     """
