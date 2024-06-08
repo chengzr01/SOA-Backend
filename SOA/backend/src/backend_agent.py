@@ -1,8 +1,10 @@
-from backend.src.config import DEFAULT_KEYWORDS, DEFAULT_MOODS, OPTIONAL_KEYWORDS
-from typing import List, Dict, Optional
+from typing import Dict, List, Optional
+
 from django.contrib.auth.models import User
+
 # import models
 from backend.models import UserProfile
+from backend.src.config import DEFAULT_KEYWORDS, OPTIONAL_KEYWORDS
 
 
 class BackendAgent:

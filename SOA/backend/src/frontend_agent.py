@@ -1,11 +1,11 @@
-from typing import List, Dict, Optional
 import re
-from backend.models import ChatMessage
+from typing import Dict, List, Optional
+
 from django.contrib.auth.models import User
 from django.db import models
-
 from zhipuai import ZhipuAI
 
+from backend.models import ChatMessage
 from backend.src.config import *
 
 

@@ -1,17 +1,18 @@
-from typing import List, Dict, Optional
-from backend.src.agent_manager import AgentManager
-from .models import Job
-from django.contrib.auth.models import User
-from django.contrib.auth import authenticate, login
 import json
-from django.shortcuts import render
+from typing import Dict, List
+
+from django.contrib.auth import authenticate, login
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.models import User
+from django.contrib.auth.signals import user_logged_in
+from django.db.models import Q
+from django.dispatch import receiver
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
-from django.contrib.auth.decorators import login_required
-from django.contrib.auth.signals import user_logged_in, user_logged_out
-from django.dispatch import receiver
-from django.db.models import Q
-from django.db.utils import IntegrityError
+
+from backend.src.agent_manager import AgentManager
+
+from .models import Job
 
 agent_manager = AgentManager()
 
