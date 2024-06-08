@@ -73,7 +73,7 @@ class FrontendAgent:
     def flush(self) -> bool:
         """
         Clear the chat history and key information for the current user.
-        Deleting from the dataset and cache 
+        Deleting from the dataset and cache
         """
         self.__reset_chat_history_for_user()
 
@@ -329,15 +329,57 @@ class FrontendAgent:
         print(self.chat_history)
 
     def summarize(self, jobs: List[Dict[str, str]]) -> str:
-        summarization = ""
+        jobs_serialize = "\n".join([
+            ", ".join(f"{key}: {value}" for key, value in job.items()) for job in jobs])
+        prompt = (
+            "Generate a paragraph to summarize the list of job information. Include perspectives such as job characteristics, company characteristics, location characteristics, and requirement characteristics. Compare the advantages and disadvantages of these jobs with each other.\n"
+            "Job information:\n{jobs_serialize}"
+        )
+        prompt = prompt.format_map({"jobs_serialize": jobs_serialize})
+        response = self.client.chat.completions.create(
+            model="glm-3-turbo",
+            messages=[
+                {"role": "user", "content": prompt}
+            ]
+        )
+        summarization = response.choices[0].message.content
         return summarization
 
     def analyze(self, jobs: List[Dict[str, str]]) -> str:
-        analysis = ""
+        jobs_serialize = "\n".join([
+            ", ".join(f"{key}: {value}" for key, value in job.items()) for job in jobs])
+        prompt = (
+            "Generate a recommendation from the job information based on personal descriptions. The recommended jobs should match the person's preferences and capabilities. Give your reasoning process job characteristics, company characteristics, location characteristics, and requirement characteristics.\n"
+            "Job information:\n{jobs_serialize}\n"
+            "Personal description:\n{personal_description}\n"
+        )
+        prompt = prompt.format_map(
+            {"jobs_serialize": jobs_serialize, "personal_description": self.description})
+        response = self.client.chat.completions.create(
+            model="glm-3-turbo",
+            messages=[
+                {"role": "user", "content": prompt}
+            ]
+        )
+        analysis = response.choices[0].message.content
         return analysis
 
     def visualize(self, jobs: List[Dict[str, str]]) -> str:
-        visualization = ""
+        jobs_serialize = "\n".join([
+            ", ".join(f"{key}: {value}" for key, value in job.items()) for job in jobs])
+        prompt = (
+            "Generate some html code to visualize the job information with bar charts. You can visualization the location, company or title of all the jobs. Start the code with <div> and end the code with </div>\n"
+            "Job information:\n{jobs_serialize}\n"
+        )
+        prompt = prompt.format_map(
+            {"jobs_serialize": jobs_serialize})
+        response = self.client.chat.completions.create(
+            model="glm-3-turbo",
+            messages=[
+                {"role": "user", "content": prompt}
+            ]
+        )
+        visualization = response.choices[0].message.content
         return visualization
 
     def get_description(self) -> str:
