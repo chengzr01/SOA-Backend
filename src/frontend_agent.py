@@ -72,7 +72,7 @@ class FrontendAgent:
         self._append_user_input(user_input)
         
        	response = self.client.chat.completions.create(
-            model = "glm-4",
+            model = "glm-3-turbo",
             messages= [
                 {"role": "system", "content": system_message}
             ] + self.chat_history,
@@ -147,7 +147,7 @@ class FrontendAgent:
         else:
             system_message = self._generate_system_message(mode='asking for more information')
             response = self.client.chat.completions.create(
-                model = "glm-4",
+                model = "glm-3-turbo",
                 messages = [
                     {"role": "system", "content": system_message}
                 ] + self.chat_history,

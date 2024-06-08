@@ -106,6 +106,7 @@ def get_response(
         return {"front end response": None, "back end response": None}
 
     complete = agent.check_key_info_completeness(user_input)
+    print(complete)
     if complete:
         query = agent.query_backend()
         # {"company": "Google", "job_title": "software engineering"}
@@ -147,7 +148,6 @@ def response(request):
     body = json.loads(request.body)
     user_name = body["username"]
     user_input = body["userinput"]
-    print("[DEBUG] response function: ", user_name)  # DEBUG
     assert user_input is not None, "user_input is None"
     # Return the response as a JSON object
     return JsonResponse(get_response(user_input, user_name))
@@ -240,6 +240,7 @@ def signup(request):
         # Authentication failed
         return JsonResponse({"message": "Failed to log in after sign up.", "success": False})
 
+
 @csrf_exempt
 def costumed_login(request):
     """
@@ -256,7 +257,8 @@ def costumed_login(request):
         return JsonResponse({"message": "Log in successful.", "success": True})
     else:
         return JsonResponse({"message": "Log in failed.", "success": False})
-    
+
+
 @csrf_exempt
 def logout(request):
     """
