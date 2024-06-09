@@ -1,4 +1,5 @@
 import json
+import re
 from typing import Dict, List
 
 from django.contrib.auth import authenticate, login
@@ -224,7 +225,13 @@ def visualize(request):
         return JsonResponse({"message": "Agent not found.", "success": False})
     else:
         visualization = agent.visualize(jobs)
-        return JsonResponse({"message": visualization, "success": True})
+
+        pattern = re.compile(r'```html(.*?)```', re.DOTALL)
+        matches = pattern.findall(visualization)
+        if matches:
+            return JsonResponse({"message": matches[0].strip(), "success": True})
+        else:
+            return JsonResponse({"message": "", "success": True})
 
 
 @csrf_exempt
