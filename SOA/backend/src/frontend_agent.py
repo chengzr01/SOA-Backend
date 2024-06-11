@@ -157,7 +157,7 @@ class FrontendAgent:
 
         # update key information
         for key, value in response_dict.items():
-            if (key in self.key_information):
+            if (key in self.key_information) and value is not None:
                 self.key_information[key] = value
 
         return response_dict
