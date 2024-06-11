@@ -1,7 +1,10 @@
+import json
+
 import requests
 from bs4 import BeautifulSoup
-import  json
+
 from backend.models import Job
+
 '''
 this function will be called by the main function
 it will take the url as an argument

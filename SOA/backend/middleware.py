@@ -1,4 +1,3 @@
-from django.urls import resolve
 
 class ExemptCSRFMiddleware:
     def __init__(self, get_response):

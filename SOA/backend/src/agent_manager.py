@@ -1,9 +1,9 @@
-from typing import Optional, Dict
+from typing import Dict, Optional
 
 from django.contrib.auth.models import User
 
-from backend.src.frontend_agent import FrontendAgent
 from backend.src.backend_agent import BackendAgent
+from backend.src.frontend_agent import FrontendAgent
 
 
 class AgentManager:

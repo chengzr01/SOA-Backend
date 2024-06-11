@@ -1,17 +1,19 @@
-from typing import List, Dict, Optional
-from backend.src.agent_manager import AgentManager
-from .models import Job
-from django.contrib.auth.models import User
-from django.contrib.auth import authenticate, login
 import json
-from django.shortcuts import render
+import re
+from typing import Dict, List
+
+from django.contrib.auth import authenticate, login
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.models import User
+from django.contrib.auth.signals import user_logged_in
+from django.db.models import Q
+from django.dispatch import receiver
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
-from django.contrib.auth.decorators import login_required
-from django.contrib.auth.signals import user_logged_in, user_logged_out
-from django.dispatch import receiver
-from django.db.models import Q
-from django.db.utils import IntegrityError
+
+from backend.src.agent_manager import AgentManager
+
+from .models import Job
 
 agent_manager = AgentManager()
 
@@ -23,7 +25,8 @@ def search(user_request: Dict[str, str], username: str):
     @param user_request: the user's request in a dictionary format.
     @return: the response to the user's request in a dictionary format.
     '''
-    print(user_request)
+    print("*" * 10)
+    print("[SEARCH] user_request:", user_request)
 
     # only company name and job title are mandatory
     company = user_request["company name"]
@@ -33,23 +36,26 @@ def search(user_request: Dict[str, str], username: str):
         level = user_request["level"]
     except KeyError:
         level = None
+
     try:
         location = user_request["location"]
     except KeyError:
         location = None
+
     try:
         requirements = user_request["requirements"]
         try:
             requirements = json.loads(requirements)  # convert string to list
         except:
             requirements = None
+
     except KeyError:
         requirements = None
 
     response = []
 
-    # TODO: update search query in backend agent
     backend_agent = agent_manager.get_backend_agent(username)
+
     backend_agent.update_user_profile(user_request)
 
     # Building the query
@@ -93,90 +99,72 @@ def search(user_request: Dict[str, str], username: str):
 
 @csrf_exempt
 # TODO! new argument: username
-def get_response(
-    user_input: str,
-    username: str
+def response(
+    request
 ) -> Dict[str, str]:
     """
     Respond to user's input.
     @return: the response to the user's input in a dictionary format.
     """
+    body = json.loads(request.body)
+    username = body["username"]
+    user_input = body["userinput"]
+
     agent = agent_manager.get_frontend_agent(username)
     if agent is None:
-        return {"front end response": None, "back end response": None}
+        return JsonResponse({"frontend response": None, "backend response": None})
 
     complete = agent.check_key_info_completeness(user_input)
+
+    print("*" * 10)
+    print("[GET RESPONSE] complete: ", complete)
+
     if complete:
         query = agent.query_backend()
+        print("*" * 10)
+        print("[GET RESPONSE] query: ", query)
         # {"company": "Google", "job_title": "software engineering"}
         res = search(query, username)
+        print("*" * 10)
+        print("[GET RESPONSE] res: ", res)
         # [{"company": "Google", "job_title": "software engineering"}, {"company": "Facebook", "job_title": "data scientist"}]
         # one and only one of the front end response and back end response should be None
-        return {"front end response": None, "back end response": res}
+        return JsonResponse({"frontend response": None, "backend response": res})
     else:
-        response = agent.respond_frontend(user_input)
-        return response
+        return JsonResponse(agent.respond_frontend(user_input))
 
 
 @csrf_exempt
 def recommendation(
-    username: str,
+    request
 ) -> Dict[str, str]:
     """
     Get a recommendation for the user.
     @return: the recommendation in a dictionary format.
     """
+    print("*" * 10)
+    body = json.loads(request.body)
+    username = body["username"]
+    print("[RECOMMENDATION]", username)
     agent = agent_manager.get_backend_agent(username)
     if agent is None:
-        return {"front end response": None, "back end response": None}
+        return JsonResponse({"frontend response": None, "backend response": None})
 
     query = agent.query_backend()
     res = search(query, username)
-    return {"front end response": None, "back end response": res}
+    return JsonResponse({"frontend response": None, "backend response": res})
 
 
-@csrf_exempt
-# @login_required
+@ csrf_exempt
+@ login_required
 # TODO! new argument: username
-def response(request):
-    """
-    Respond to user's input.
-    Request is a POST request with the user's input in the body.
-    @return: the response to the user's input in a dictionary format.
-    """
-    body = json.loads(request.body)
-    user_name = body["username"]
-    user_input = body["userinput"]
-    print("[DEBUG] response function: ", user_name)  # DEBUG
-    assert user_input is not None, "user_input is None"
-    # Return the response as a JSON object
-    return JsonResponse(get_response(user_input, user_name))
-
-
-@csrf_exempt
-def recommendation(request):
-    body = json.loads(request.body)
-    user_name = body["username"]
-    return JsonResponse(get_recommendation(username=user_name))
-
-
-@csrf_exempt
-def index(request):
-    """
-    Render the index page.
-    @return: the index page.
-    """
-    return render(request, 'index.html')  # TODO
-
-
-@csrf_exempt
-@login_required
-# TODO! new argument: username
-def flush(request, username: str):
+def flush(request):
     """
     Flush the chat history and key information.
     @return: a JSON response.
     """
+    body = json.loads(request.body)
+    username = body["username"]
     agent = agent_manager.get_frontend_agent(username)
     if agent is None:
         return JsonResponse({"message": "Agent not found.", "success": False})
@@ -185,12 +173,14 @@ def flush(request, username: str):
     return JsonResponse({"message": "Chat history and key information regarding the user have been flushed.", "success": True})
 
 
-@csrf_exempt
+@ csrf_exempt
 # TODO! new argument: username
-def reset(request, username: str):
+def reset(request):
     '''
     delete every chat history and key information
     et '''
+    body = json.loads(request.body)
+    username = body["username"]
     agent = agent_manager.get_frontend_agent(username)
     if agent is None:
         return JsonResponse({"message": "Agent not found.", "success": False})
@@ -200,6 +190,75 @@ def reset(request, username: str):
 
 
 @csrf_exempt
+def summarize(request):
+    body = json.loads(request.body)
+    username = body["username"]
+    jobs = body["jobs"]
+    agent = agent_manager.get_frontend_agent(username)
+    if agent is None:
+        return JsonResponse({"message": "Agent not found.", "success": False})
+    else:
+        summarization = agent.summarize(jobs)
+        return JsonResponse({"message": summarization, "success": True})
+
+
+@csrf_exempt
+def analyze(request):
+    body = json.loads(request.body)
+    username = body["username"]
+    jobs = body["jobs"]
+    agent = agent_manager.get_frontend_agent(username)
+    if agent is None:
+        return JsonResponse({"message": "Agent not found.", "success": False})
+    else:
+        analysis = agent.analyze(jobs)
+        return JsonResponse({"message": analysis, "success": True})
+
+
+@csrf_exempt
+def visualize(request):
+    body = json.loads(request.body)
+    username = body["username"]
+    jobs = body["jobs"]
+    agent = agent_manager.get_frontend_agent(username)
+    if agent is None:
+        return JsonResponse({"message": "Agent not found.", "success": False})
+    else:
+        visualization = agent.visualize(jobs)
+
+        pattern = re.compile(r'```html(.*?)```', re.DOTALL)
+        matches = pattern.findall(visualization)
+        if matches:
+            return JsonResponse({"message": matches[0].strip(), "success": True})
+        else:
+            return JsonResponse({"message": "", "success": True})
+
+
+@csrf_exempt
+def update_description(request):
+    body = json.loads(request.body)
+    username = body["username"]
+    descriptipn = body["description"]
+    agent = agent_manager.get_frontend_agent(username)
+    if agent is None:
+        return JsonResponse({"message": "Agent not found.", "success": False})
+    else:
+        update_result = agent.update_description(descriptipn)
+        return JsonResponse({"message": descriptipn, "success": update_result})
+
+
+@csrf_exempt
+def get_description(request):
+    body = json.loads(request.body)
+    username = body["username"]
+    agent = agent_manager.get_frontend_agent(username)
+    if agent is None:
+        return JsonResponse({"message": "Agent not found.", "success": False})
+    else:
+        return JsonResponse({"message": agent.description, "success": True})
+
+
+@ csrf_exempt
 def signup(request):
     """
     Sign up a new user.
@@ -240,7 +299,8 @@ def signup(request):
         # Authentication failed
         return JsonResponse({"message": "Failed to log in after sign up.", "success": False})
 
-@csrf_exempt
+
+@ csrf_exempt
 def costumed_login(request):
     """
     Log in a user.
@@ -256,8 +316,9 @@ def costumed_login(request):
         return JsonResponse({"message": "Log in successful.", "success": True})
     else:
         return JsonResponse({"message": "Log in failed.", "success": False})
-    
-@csrf_exempt
+
+
+@ csrf_exempt
 def logout(request):
     """
     Log out a user.
@@ -268,8 +329,8 @@ def logout(request):
     return JsonResponse({"message": "Log out successful.", "success": True})
 
 
-@csrf_exempt
-@receiver(user_logged_in)
+@ csrf_exempt
+@ receiver(user_logged_in)
 # TODO! new argument: username
 def on_user_logged_in(sender, request, **kwargs):
     """

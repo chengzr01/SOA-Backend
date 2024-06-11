@@ -2,7 +2,9 @@
 # python manage.py daily_update
 
 from django.core.management.base import BaseCommand
+
 from backend.crawl import entry
+
 
 class UpdateDatabase(BaseCommand):
     help = "Update the database with the latest job listings"
