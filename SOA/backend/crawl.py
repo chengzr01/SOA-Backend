@@ -7,11 +7,12 @@ this function will be called by the main function
 it will take the url as an argument
 '''
 def entry(url, start_page = 1, end_page = None):
+    print("?")
     # if url is metacareers.com/jobs/
     if url == 'metacareers.com/jobs/':
         pass
     elif url.startswith('https://www.google.com/about/careers/applications/jobs/results/'):
-        return googlecareers(url)
+        return googlecareers(url, start_page = start_page, end_page = end_page)
 
 
 def googlecareers(url, save = True, start_page = 1, end_page = None):
@@ -96,7 +97,7 @@ def googlecareers(url, save = True, start_page = 1, end_page = None):
     #     # Close the connection to the database after crawling
     #     conn.close()
         
-
+# entry("https://www.google.com/about/careers/applications/jobs/results/", start_page = 28)
 # test case
 # job = Job(location="Mountain View, CA, USA", job_title="Software Engineer", level="Entry level", corporate="Google", requirements=json.dumps(["BS in Computer Science or equivalent", "Experience in software development", "Experience with Python, Java, or C++"]))
 # job.save()
